@@ -41,6 +41,8 @@
             padding: 20px;
             border: 1px solid var(--border);
             height: fit-content;
+            position: relative;
+            padding-bottom: 80px;
         }
 
         .header {
@@ -54,11 +56,6 @@
             margin-bottom: 4px;
         }
 
-        .sync-status {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
         .tabs {
             display: flex;
             gap: 8px;
@@ -69,12 +66,12 @@
 
         .tab-btn {
             flex: 1;
-            min-width: 100px;
+            min-width: 90px;
             padding: 10px;
             background: var(--bg-color);
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-muted);
             cursor: pointer;
@@ -93,13 +90,13 @@
             background: var(--bg-color);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 20px;
             text-align: center;
             margin-bottom: 20px;
         }
 
         .summary-card h3 {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-muted);
@@ -107,9 +104,76 @@
         }
 
         .summary-card .value {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--text-main);
+        }
+
+        .lancamentos-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .lancamento-item {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .lancamento-info h4 {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .lancamento-info span {
+            font-size: 0.75rem;
+            background: var(--primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .lancamento-valor {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: calc(50% - 280px);
+            background: var(--primary);
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+
+        .fab:hover {
+            background: var(--primary-hover);
+        }
+
+        @media (max-width: 640px) {
+            .fab {
+                right: 24px;
+            }
         }
     </style>
 </head>
@@ -118,21 +182,51 @@
     <div class="container">
         <div class="header">
             <h1>MGC</h1>
-            <div class="sync-status">Gerenciador Financeiro Pessoal</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Gerenciador Financeiro Pessoal</div>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active">📑 Despesas</button>
-            <button class="tab-btn">🏗️️ Obra</button>
-            <button class="tab-btn">⏳ Pendentes</button>
-            <button class="tab-btn">🐷 Porquinho</button>
+            <button class="tab-btn active" onclick="mudarAba('despesas')">📑 Despesas</button>
+            <button class="tab-btn" onclick="mudarAba('obra')">🏗 Obra</button>
+            <button class="tab-btn" onclick="mudarAba('pendentes')">⏳ Pendentes</button>
+            <button class="tab-btn" onclick="mudarAba('porquinho')">🐷 Porquinho</button>
         </div>
 
         <div class="summary-card">
-            <h3>Total de Despesas</h3>
-            <div class="value">R$ 0,00</div>
+            <h3 id="titulo-total">Total de Despesas</h3>
+            <div class="value" id="valor-total">R$ 10,00</div>
         </div>
+
+        <div class="lancamentos-header">Lançamentos</div>
+        
+        <div class="lancamento-item">
+            <div class="lancamento-info">
+                <h4>teste 04-10</h4>
+                <span>Outros</span>
+            </div>
+            <div class="lancamento-valor">R$ 10,00</div>
+        </div>
+
+        <button class="fab" onclick="alert('Função de adicionar novo lançamento em breve!')">+</button>
     </div>
 
+    <script>
+        function mudarAba(aba) {
+            const botoes = document.querySelectorAll('.tab-btn');
+            botoes.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const tituloTotal = document.getElementById('titulo-total');
+            if(aba === 'obra') {
+                tituloTotal.innerText = 'Total de Gastos com Obra';
+            } else if(aba === 'pendentes') {
+                tituloTotal.innerText = 'Total Pendente';
+            } else if(aba === 'porquinho') {
+                tituloTotal.innerText = 'Total Guardado';
+            } else {
+                tituloTotal.innerText = 'Total de Despesas';
+            }
+        }
+    </script>
 </body>
 </html>
