@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MGC - Gerenciador Financeiro Pessoal</title>
+<!-- Biblioteca de Login do Google -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --paper:#FAF6EC; --ink:#221E17; --sub:#7A7264; --line:#DCD3BE;
@@ -17,6 +19,15 @@ body{
 }
 .mono{font-family:"IBM Plex Mono",monospace;}
 .wrap{max-width:480px;margin:0 auto;padding-bottom:60px;}
+
+/* Tela de Login do Google */
+#lockScreen{
+  position:fixed; inset:0; background:var(--paper); z-index:999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;
+}
+#lockScreen h2{font-size:22px; margin-bottom:8px; color:var(--ink);}
+#lockScreen p{font-size:13px; color:var(--sub); margin-bottom:24px;}
+#lockError{color:var(--stamp); font-size:12px; margin-top:12px; max-width:280px;}
 
 header{padding:8px 0 12px; display:flex; justify-content:center; align-items:center; position:relative;}
 .brand h1{font-size:22px;letter-spacing:.08em;font-weight:800;margin:0;color:var(--ink);text-align:center;width:100%;}
@@ -185,10 +196,19 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </head>
 <body>
 
+<!-- Tela de Login do Google -->
+<div id="lockScreen">
+  <h2>🔒 MGC Financeiro</h2>
+  <p>Acesso restrito. Faça login com uma conta autorizada.</p>
+  <!-- Botão gerado pelo Google Sign-In -->
+  <div id="googleBtnWrapper" style="display:inline-block;"></div>
+  <div id="lockError"></div>
+</div>
+
 <div class="wrap">
   <header>
     <div class="header-left">
-      <button class="privacy-btn" id="privacyBtn" title="Esconder/Exibir Valores">👁️</button>
+      <button class="privacy-btn" id="privacyBtn" title="Esconder/Exibir Valores">👁</button>
     </div>
     <div class="brand"><h1>MGC</h1></div>
   </header>
@@ -277,8 +297,8 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
     <h3 id="modalTitle">Nova Despesa MGC</h3>
-    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
-    <button class="photobtn" id="photoBtn">📷 Ler comprovante com IA/OCR</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button class="photobtn" id="photoBtn">📷 Anexar ou Ler comprovante</button>
     <div class="preview" id="preview" style="display:none"></div>
     <div class="note" id="ocrNote"></div>
     <div class="row2" style="margin-top:10px;">
@@ -309,7 +329,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   </div>
 </div>
 
-<!-- Modal Detalhes / Visualização de Comprovante e Edição -->
+<!-- Modal Detalhes -->
 <div class="sheet-bg" id="detailSheetBg">
   <div class="sheet">
     <h3 id="detTitle">Detalhes do Lançamento</h3>
@@ -322,11 +342,11 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   </div>
 </div>
 
-<!-- Modal ImageViewer / Zoom da Imagem -->
+<!-- Modal Zoom Imagem -->
 <div class="sheet-bg" id="imageViewerBg" style="z-index: 30; background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
   <div style="position: relative; max-width: 90vw; max-height: 90vh; text-align: center; padding: 20px;">
     <button id="imageViewerClose" style="position: absolute; top: 0; right: 0; background: var(--stamp); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; font-weight: bold; z-index: 35;">✕</button>
-    <img id="imageViewerImg" src="" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" alt="Comprovante Ampliado">
+    <img id="imageViewerImg" src="" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" alt="Zoom">
   </div>
 </div>
 
@@ -383,7 +403,54 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
+// Substitua pelo seu ID de Cliente OAuth do Google (Client ID)
+// Veja o passo 2 abaixo para gerar o seu Client ID gratuitamente.
+const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com'; 
+
 let WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyRZJY2BpqT9FFAi2oGKV2j5MUsyqFzgoSerFfwFnQ3R-fffpmCJ9knv4uXTjYV2tme3w/exec';
+
+// Inicializar Google Sign-In
+window.onload = function () {
+  if (typeof google !== 'undefined') {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    });
+    google.accounts.id.renderButton(
+      document.getElementById("googleBtnWrapper"),
+      { theme: "outline", size: "large", text: "signin_with", locale: "pt-BR" }
+    );
+  }
+};
+
+async function handleGoogleLogin(response) {
+  document.getElementById('lockError').textContent = 'Verificando autorização...';
+  try {
+    // Decodifica o token JWT do Google para pegar o e-mail do usuário
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const user = JSON.parse(jsonPayload);
+    const email = user.email;
+
+    // Valida no Google Apps Script se o e-mail está autorizado
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'auth', email: email })
+    });
+    const result = await res.json();
+
+    if(result.autorizado) {
+      document.getElementById('lockScreen').style.display = 'none';
+      loadFromCloud();
+    } else {
+      document.getElementById('lockError').textContent = `Acesso negado para o e-mail: ${email}. Este e-mail não está na lista de permissões.`;
+    }
+  } catch(e) {
+    document.getElementById('lockError').textContent = 'Erro ao autenticar. Tente novamente.';
+    console.error(e);
+  }
+}
 
 const CATCOL = ["cat0","cat1","cat2","cat3","cat4","cat5","cat6"];
 function hashColor(name){
@@ -989,6 +1056,24 @@ document.getElementById('fileInput').onchange = async (ev)=>{
   reader.readAsDataURL(file);
 };
 
+document.addEventListener('paste', async (e) => {
+  if(!sheetBg.classList.contains('open')) return;
+  const items = e.clipboardData?.items;
+  if(!items) return;
+  for(let item of items) {
+    if(item.type.indexOf('image') === 0) {
+      const file = item.getAsFile();
+      if(file) {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = dataTransfer.files;
+        fileInput.onchange({ target: fileInput });
+      }
+    }
+  }
+});
+
 document.getElementById('saveAdd').onclick = async ()=>{
   const data = document.getElementById('fData').value;
   const valor = parseFloat(document.getElementById('fValor').value.toString().replace(',', '.'));
@@ -1178,10 +1263,6 @@ function doExport(scope){
     console.error('Erro ao exportar:', err);
     note.textContent = 'Erro ao gerar arquivo Excel.';
   }
-}
-
-if(WEBHOOK_URL) {
-  loadFromCloud();
 }
 </script>
 </body>
