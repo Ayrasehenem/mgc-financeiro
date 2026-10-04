@@ -4,185 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MGC Financeiro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-center items-center">
+    <style>
+        :root {
+            --bg-color: #fcf9f2;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary-color: #b5832a;
+            --primary-hover: #9a6e21;
+            --border-color: #e2d9cc;
+        }
 
-    <div id="login-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md mx-4 border border-slate-100 hidden">
-        <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 text-amber-600 rounded-full text-2xl mb-3 shadow-inner">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h1 class="text-2xl font-bold text-slate-900">MGC Financeiro</h1>
-            <p class="text-slate-500 text-sm mt-1">Digite a senha de acesso para continuar</p>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Tela de Login */
+        #login-screen {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        #login-screen h2 {
+            margin-bottom: 20px;
+            color: #2c2c2c;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .error-msg {
+            color: #d9534f;
+            font-size: 14px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Conteúdo Principal (Aparece após logar) */
+        #app-screen {
+            display: none;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen">
+        <h2>🔒 MGC Financeiro</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Digite sua senha de acesso para continuar</p>
+        
+        <div class="input-group">
+            <label for="senha">SENHA DE ACESSO</label>
+            <input type="password" id="senha" placeholder="Sua senha..." autofocus>
         </div>
 
-        <form id="login-form" onsubmit="fazerLogin(event)" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Senha de Acesso</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <i class="fa-solid fa-key"></i>
-                    </span>
-                    <input type="password" id="senha-input" placeholder="Digite a senha..." required
-                        class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all text-sm">
-                </div>
-            </div>
-
-            <div id="login-error" class="text-red-500 text-xs text-center font-medium hidden">
-                Senha incorreta. Tente novamente.
-            </div>
-
-            <button type="submit" id="btn-entrar"
-                class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-amber-600/20 flex items-center justify-center gap-2">
-                <span>Entrar no Sistema</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
-        </form>
+        <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+        <div id="erro-msg" class="error-msg">Senha incorreta! Tente novamente.</div>
     </div>
 
-    <div id="app-screen" class="w-full max-w-4xl mx-auto p-4 md:p-6 hidden">
-        <header class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center font-bold">
-                    <i class="fa-solid fa-wallet"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-slate-900 text-lg">MGC Financeiro</h1>
-                    <p class="text-xs text-slate-500">Sistema de Lançamentos</p>
-                </div>
-            </div>
-            <button onclick="fazerLogout()" class="text-slate-400 hover:text-red-600 text-sm font-medium transition-colors flex items-center gap-1 bg-slate-50 hover:bg-red-50 px-3 py-2 rounded-xl">
-                <i class="fa-solid fa-right-from-bracket"></i> Sair
-            </button>
-        </header>
-
-        <!-- Container principal do seu sistema de lançamentos -->
-        <main class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <h2 class="text-lg font-bold text-slate-800 mb-4"><i class="fa-solid fa-plus-circle text-amber-600 mr-2"></i>Novo Lançamento</h2>
-            
-            <form id="lancamento-form" onsubmit="enviarLancamento(event)" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Tipo</label>
-                        <select id="tipo" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                            <option value="Entrada">Entrada</option>
-                            <option value="Saída">Saída</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Valor (R$)</label>
-                        <input type="number" step="0.01" id="valor" required placeholder="0,00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Descrição</label>
-                    <input type="text" id="descricao" required placeholder="Ex: Pagamento de fornecedor" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
-                </div>
-
-                <button type="submit" id="btn-enviar" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-all shadow-md">
-                    Salvar Lançamento
-                </button>
-            </form>
-        </main>
+    <!-- TELA DO APLICATIVO (Onde ficam os lançamentos) -->
+    <div id="app-screen">
+        <h1>Bem-vindo ao MGC Financeiro 🚀</h1>
+        <p>Painel de lançamentos liberado com sucesso!</p>
+        <button onclick="sair()" style="margin-top: 20px; padding: 10px 20px; background: #ccc; border: none; border-radius: 6px; cursor: pointer;">Sair / Bloquear</button>
     </div>
 
     <script>
-        // COLE AQUI O SEU LINK WEB APP DO APPS SCRIPT
-        const WEBHOOK_URL = https://script.google.com/macros/s/AKfycbzzburGr5Wix2gLHE726rP6Rppa1I2I8q9QKud3D6thwZSBP8TjjVUNm8qbqGu9YjjKRA/exec;
+        // Defina sua senha aqui
+        const SENHA_MESTRE = "MarmoresMgc442220"; 
+        
+        // Link atualizado do Apps Script que você acabou de gerar
+        const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuvl71RJfR_Lan14U-R2764eJiuX9Ro3E9EiRjg2Zzr_bwFmNz5aOfihOmJ-fj6Lm9rg/exec";
 
-        // Verifica se já está logado ao carregar a página
-        window.addEventListener('DOMContentLoaded', () => {
-            const logado = localStorage.getItem('mgc_logado');
-            if (logado === 'true') {
+        // Verifica se já estava logado anteriormente no navegador
+        window.onload = function() {
+            if (localStorage.getItem("mgc_logado") === "true") {
+                mostrarApp();
+            }
+        };
+
+        function fazerLogin() {
+            const senhaDigitada = document.getElementById("senha").value;
+            const erroMsg = document.getElementById("erro-msg");
+
+            if (senhaDigitada === SENHA_MESTRE) {
+                localStorage.setItem("mgc_logado", "true");
                 mostrarApp();
             } else {
-                mostrarLogin();
+                erroMsg.style.display = "block";
+                document.getElementById("senha").value = "";
+                document.getElementById("senha").focus();
             }
-        });
-
-        function mostrarLogin() {
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('app-screen').classList.add('hidden');
         }
 
         function mostrarApp() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("app-screen").style.display = "block";
         }
 
-        async function fazerLogin(event) {
-            event.preventDefault();
-            const senha = document.getElementById('senha-input').value;
-            const btn = document.getElementById('btn-entrar');
-            const erroDiv = document.getElementById('login-error');
+        function sair() {
+            localStorage.removeItem("mgc_logado");
+            location.reload();
+        }
 
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Verificando...';
-            erroDiv.classList.add('hidden');
-
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'auth', senha: senha })
-                });
-                const resultado = await response.json();
-
-                if (resultado.autorizado) {
-                    // Salva no navegador para nunca mais pedir login neste dispositivo
-                    localStorage.setItem('mgc_logado', 'true');
-                    mostrarApp();
-                } else {
-                    erroDiv.classList.remove('hidden');
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao conectar com o servidor.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Entrar no Sistema</span><i class="fa-solid fa-arrow-right"></i>';
+        // Permitir apertar "Enter" para logar
+        document.getElementById("senha").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                fazerLogin();
             }
-        }
-
-        function fazerLogout() {
-            localStorage.removeItem('mgc_logado');
-            document.getElementById('senha-input').value = '';
-            mostrarLogin();
-        }
-
-        async function enviarLancamento(event) {
-            event.preventDefault();
-            const tipo = document.getElementById('tipo').value;
-            const valor = document.getElementById('valor').value;
-            const descricao = document.getElementById('descricao').value;
-            const btn = document.getElementById('btn-enviar');
-
-            btn.disabled = true;
-            btn.innerText = "Salvando...";
-
-            try {
-                await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'lancamento',
-                        id: 'ID_' + Date.now(),
-                        tipo: tipo,
-                        data: new Date().toLocaleDateString('pt-BR'),
-                        valor: valor,
-                        descricao: descricao
-                    })
-                });
-                alert("Lançamento salvo com sucesso!");
-                document.getElementById('lancamento-form').reset();
-            } catch (err) {
-                alert("Erro ao salvar lançamento.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Salvar Lançamento";
-            }
-        }
+        });
     </script>
 </body>
 </html>
