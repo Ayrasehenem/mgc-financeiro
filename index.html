@@ -448,7 +448,7 @@ async function handlePasswordLogin() {
     console.error('Erro de conexão com o Apps Script:', e);
     // FALLBACK LOCAL: Caso a nuvem falhe (CORS, link quebrado), 
     // Permite usar a senha "1234" para entrar no app em modo local/offline.
-    if (senha === '1234') {
+    if (senha === '123456') {
         errorEl.textContent = 'Acessando modo offline...';
         setTimeout(() => {
             document.getElementById('lockScreen').style.display = 'none';
