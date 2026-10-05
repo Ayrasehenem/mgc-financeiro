@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -159,19 +160,31 @@
   </div>
 
   <script>
-    // Estado global da aplicação
     let transactions = JSON.parse(localStorage.getItem('pj_transactions')) || [];
     let pendingImageName = '';
     let pendingImageBase64 = '';
     let chartInstance = null;
 
-    // Inicialização da página
+    const monthMap = {
+      'jan': '01', 'janeiro': '01',
+      'fev': '02', 'fevereiro': '02',
+      'mar': '03', 'marco': '03', 'março': '03',
+      'abr': '04', 'abril': '04',
+      'mai': '05', 'maio': '05',
+      'jun': '06', 'junho': '06',
+      'jul': '07', 'julho': '07',
+      'ago': '08', 'agosto': '08',
+      'set': '09', 'setembro': '09',
+      'out': '10', 'outubro': '10',
+      'nov': '11', 'novembro': '11',
+      'dez': '12', 'dezembro': '12'
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
       renderAll();
       initChart();
     });
 
-    // Funções do Modal
     function openModal() {
       document.getElementById('txForm').reset();
       document.getElementById('fData').value = new Date().toISOString().split('T')[0];
@@ -193,7 +206,7 @@
       document.getElementById('txModal').classList.remove('flex');
     }
 
-    // PROCESSAMENTO OCR (Tesseract.js)
+    // PROCESSAMENTO OCR ROBUSTO PARA NUBANK E C6 BANK
     document.getElementById('fileInput').onchange = async (ev) => {
       const file = ev.target.files[0];
       if (!file) return;
@@ -209,7 +222,7 @@
         
         prev.style.display = 'flex';
         prev.innerHTML = `<img src="${fullDataUrl}" class="max-h-24 rounded object-cover"> <span class="text-xs mt-1 text-slate-600">${file.name}</span>`;
-        note.textContent = 'Processando OCR (extraindo valor, data e destino)...';
+        note.textContent = 'Processando OCR do comprovante...';
 
         try {
           const worker = await Tesseract.createWorker('por');
@@ -217,7 +230,9 @@
           const text = ret.data.text;
           await worker.terminate();
 
-          // 1. EXTRAÇÃO DE VALOR
+          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+          // 1. EXTRAÇÃO DE VALOR (Suporta "R$ 100,00" ou "R$ 366,00")
           const valMatch = text.match(/(?:R\$\s?|Valor\s?:?\s?R?\$\s?)([\d\.\,]+)/i);
           if (valMatch) {
             let rawVal = valMatch[1].trim();
@@ -232,46 +247,64 @@
             }
           }
 
-          // 2. EXTRAÇÃO DE DATA (DD/MM/AAAA ou DD/MM/AA)
-          const dateMatch = text.match(/(\d{2})[\/\.-](\d{2})[\/\.-](\d{2,4})/);
-          if (dateMatch) {
-            let day = dateMatch[1];
-            let month = dateMatch[2];
-            let year = dateMatch[3];
-            if (year.length === 2) year = '20' + year;
-            
-            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-            if (!isNaN(Date.parse(isoDate))) {
-              document.getElementById('fData').value = isoDate;
-            }
-          }
-
-          // 3. EXTRAÇÃO DO NOME DO DESTINATÁRIO / RECEBEDOR
-          const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-          let foundName = '';
-          const keywords = /recebedor|favorecido|destinatario|nome|para:|pago a|dados de quem recebeu|destino/i;
-
-          for (let i = 0; i < lines.length; i++) {
-            let line = lines[i];
-            if (keywords.test(line)) {
-              const parts = line.split(/:(.+)/);
-              if (parts[1] && parts[1].trim().length > 2) {
-                foundName = parts[1].trim();
-                break;
-              } else if (lines[i + 1] && lines[i + 1].length > 2) {
-                foundName = lines[i + 1];
-                break;
+          // 2. EXTRAÇÃO DE DATA (DD/MM/AAAA, DD OUT 2026, 30 de setembro de 2026)
+          let extractedDate = null;
+          
+          // Formato Padrão: 30/09/2026
+          const numericDate = text.match(/(\d{2})[\/\.-](\d{2})[\/\.-](\d{2,4})/);
+          if (numericDate) {
+            let day = numericDate[1];
+            let month = numericDate[2];
+            let year = numericDate[3].length === 2 ? '20' + numericDate[3] : numericDate[3];
+            extractedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          } else {
+            // Formato Por Extenso/Abreviado (Ex: "03 OUT 2026" ou "30 de setembro de 2026")
+            const textDateMatch = text.match(/(\d{1,2})\s+(?:de\s+)?([a-zA-zçÇ]+)\s+(?:de\s+)?(\d{4})/i);
+            if (textDateMatch) {
+              let day = textDateMatch[1].padStart(2, '0');
+              let monthStr = textDateMatch[2].toLowerCase();
+              let year = textDateMatch[3];
+              let monthNum = monthMap[monthStr];
+              if (monthNum) {
+                extractedDate = `${year}-${monthNum}-${day}`;
               }
             }
           }
 
-          // Fallback para linhas em CAIXA ALTA
+          if (extractedDate && !isNaN(Date.parse(extractedDate))) {
+            document.getElementById('fData').value = extractedDate;
+          }
+
+          // 3. EXTRAÇÃO DO DESTINATÁRIO (Especialmente ajustado para C6 Bank e Nubank)
+          let foundName = '';
+
+          // Busca especificamente na seção "Destino" (Ex: Nubank)
+          let inDestinoSection = false;
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            if (/^destino$/i.test(line)) {
+              inDestinoSection = true;
+              continue;
+            }
+            if (inDestinoSection) {
+              if (/^origem$/i.test(line)) break; // Sai se chegou no pagador
+              if (/nome/i.test(line)) {
+                foundName = line.replace(/nome/i, '').replace(/[:\.-]/g, '').trim();
+                if (!foundName && lines[i+1]) foundName = lines[i+1].trim();
+                if (foundName) break;
+              }
+            }
+          }
+
+          // Se não encontrou, busca o padrão do C6 Bank (Nome do recebedor perto do topo)
           if (!foundName) {
             for (let line of lines) {
+              // Ignora códigos de autenticação, taxas, chaves e palavras do sistema
               if (
                 line.length > 3 &&
-                !/\$|data|cnpj|cpf|banco|agencia|conta|autenticacao|transacao|pix|mgc|comprovante|valor/i.test(line) &&
-                /[A-ZÀ-Ú]{3,}\s[A-ZÀ-Ú]{3,}/.test(line)
+                !/c6|bank|nubank|pix|andamento|realizado|autenticacao|transacao|chave|cpf|cnpj|banco|agencia|conta|valor|origem|destino|comprovante/i.test(line) &&
+                !/^[0-9A-Z]{15,}$/.test(line) && // Filtra hashes de transação
+                /[A-ZÀ-Ú]{3,}\s[A-ZÀ-Ú]{2,}/.test(line)
               ) {
                 foundName = line;
                 break;
@@ -279,8 +312,9 @@
             }
           }
 
+          // Limpa caracteres especiais indesejados no nome
           if (foundName) {
-            foundName = foundName.replace(/^[^a-zA-ZÀ-ú]+|[^a-zA-ZÀ-ú]+$/g, '');
+            foundName = foundName.replace(/^[^a-zA-ZÀ-ú]+|[^a-zA-ZÀ-ú]+$/g, '').trim();
             document.getElementById('fDesc').value = foundName;
           }
 
@@ -293,7 +327,6 @@
       reader.readAsDataURL(file);
     };
 
-    // Salvar Transação
     function handleSaveTx(e) {
       e.preventDefault();
       
@@ -325,7 +358,6 @@
       updateChart();
     }
 
-    // Renderização de Dados na Tela
     function renderAll() {
       const tbody = document.getElementById('txTableBody');
       const countEl = document.getElementById('txCount');
@@ -377,7 +409,6 @@
       document.getElementById('totalSaldo').textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldo);
     }
 
-    // Gráfico Chart.js
     function initChart() {
       const ctx = document.getElementById('financeChart').getContext('2d');
       chartInstance = new Chart(ctx, {
