@@ -410,7 +410,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 
 <script>
 // URL do Webhook do Google Apps Script atualizada
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby_-YEWVxf7ndfQx24KgAblG7c5fp_0A_hCIk305b6Gu3VGl1hgn7fjOgO3IuBoBX3dKw/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwa95Y4VI4Ej3jBWur-saiTy4EfaGfwwOE35l5Pp02xwHVhgeN33xFuiMY8HcC1EYh1Gg/exec';
 
 // Sistema de Login por Senha com Fallback de Segurança
 document.getElementById('lockSubmitBtn').onclick = handlePasswordLogin;
@@ -418,43 +418,20 @@ document.getElementById('lockPasswordInput').onkeydown = (e) => {
   if(e.key === 'Enter') handlePasswordLogin();
 };
 
-async function handlePasswordLogin() {
+const SENHA_CORRETA = '1234'; // troque aqui quando quiser mudar a senha
+
+function handlePasswordLogin() {
   const senha = document.getElementById('lockPasswordInput').value.trim();
   const errorEl = document.getElementById('lockError');
   if(!senha) {
     errorEl.textContent = 'Digite a senha.';
     return;
   }
-  
-  errorEl.textContent = 'Verificando senha...';
-  try {
-    const res = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify({ action: 'auth', senha: senha })
-    });
-    const result = await res.json();
-
-    if(result.autorizado) {
-      document.getElementById('lockScreen').style.display = 'none';
-      loadFromCloud();
-    } else {
-      errorEl.textContent = 'Senha incorreta. Tente novamente.';
-    }
-  } catch(e) {
-    console.error('Erro de conexão com o Apps Script:', e);
-    // FALLBACK LOCAL: Senha padrão 1234
-    if (senha === '1234') {
-        errorEl.textContent = 'Acessando modo offline...';
-        setTimeout(() => {
-            document.getElementById('lockScreen').style.display = 'none';
-            loadFromCloud();
-        }, 800);
-    } else {
-        errorEl.innerHTML = 'Erro na nuvem. <br><small>Dica: Use a senha <b>1234</b> para entrar offline.</small>';
-    }
+  if(senha === SENHA_CORRETA) {
+    document.getElementById('lockScreen').style.display = 'none';
+    loadFromCloud();
+  } else {
+    errorEl.textContent = 'Senha incorreta. Tente novamente.';
   }
 }
 
