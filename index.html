@@ -431,14 +431,14 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzDl9oWVPOKZ2bPBxF80QJbAocE68n76n2SKnfe9aIyNrVMNwZwVVrk89yuok3ynFdCAQ/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyamNeiof2eeksEVlZZM0uwHkNaPBU-1pUp7hqjXoggThHo03Z0HvFgPES7DbUaPCjZxg/exec';
 
 const SENHA_CORRETA = 'Marmores'; 
 const sessionLogged = localStorage.getItem('mgc_logged');
 
 if(sessionLogged === 'true') {
   document.getElementById('lockScreen').style.display = 'none';
-  loadFromCloud();
+  setTimeout(loadFromCloud, 0); // espera as variáveis serem declaradas
 } else {
   document.getElementById('lockScreen').style.display = 'flex';
 }
@@ -502,6 +502,45 @@ let editingPendingId = null;
 let currentDetailItem = null;
 
 const fmtMoney = n => privacyMode ? 'R$ •••••' : (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function driveId(s){ const m = String(s).match(/[?&]id=([\w-]+)/) || String(s).match(/\/d\/([\w-]+)/); return m ? m[1] : null; }
+function imgUrl(s, size){
+  if(!s) return '';
+  if(String(s).startsWith('http')){ const id = driveId(s); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size||400}` : s; }
+  return `data:image/jpeg;base64,${s}`;
+}
+function buildImageName(data, desc, prefix){
+  const slug = String(desc||'comprovante').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50) || 'comprovante';
+  return (prefix ? prefix+'_' : '') + (data||todayStr()) + '_' + slug + '.jpg';
+}
+function compressImage(dataUrl, maxSide=1600, quality=0.82){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const r = Math.min(1, maxSide/Math.max(img.width,img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*r); c.height = Math.round(img.height*r);
+      const ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = ()=>resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+function saveCache(){
+  try{
+    const strip = a => a.map(i => (i.image && !String(i.image).startsWith('http')) ? {...i, image:''} : i);
+    localStorage.setItem('mgc_cache', JSON.stringify({expenses:strip(expenses), obraMovs:strip(obraMovs), pendingBills:strip(pendingBills), piggyMovements:strip(piggyMovements)}));
+  }catch(e){}
+}
+function loadCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem('mgc_cache')||'null');
+    if(!c) return false;
+    expenses=c.expenses||[]; obraMovs=c.obraMovs||[]; pendingBills=c.pendingBills||[]; piggyMovements=c.piggyMovements||[];
+    return true;
+  }catch(e){ return false; }
+}
 const monthKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 
 function formatDate(dateStr) {
@@ -567,9 +606,11 @@ function setupAddable(selEl, rowId, inputId, btnId, list, addLabel, storageKey){
   const confirmAdd = ()=>{
     const val = input.value.trim();
     if(!val) return;
-    if(!list.includes(val)) { 
-      list.push(val); 
-      localStorage.setItem(storageKey, JSON.stringify(list));
+    const live = storageKey === 'mgc_cats' ? categorias : tagsList;
+    if(!live.includes(val)) { 
+      live.push(val); 
+      localStorage.setItem(storageKey, JSON.stringify(live));
+      saveConfig();
     }
     refreshAllSelects();
     selEl.value = val;
@@ -587,6 +628,8 @@ function renderFilterOptions(){
   filterTagEl.innerHTML = '<option value="todas">Todas tags</option>' + tagsList.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   filterCatEl.value = categorias.includes(keepC) ? keepC : 'todas';
   filterTagEl.value = tagsList.includes(keepT) ? keepT : 'todas';
+  filterCategoria = filterCatEl.value;
+  filterTag = filterTagEl.value;
 }
 filterCatEl.onchange = ()=>{ filterCategoria = filterCatEl.value; render(); };
 filterTagEl.onchange = ()=>{ filterTag = filterTagEl.value; render(); };
@@ -639,53 +682,76 @@ document.getElementById('catManagerSave').onclick = () => {
     if(val && !newList.includes(val)) newList.push(val);
   });
   if(editingManagerType === 'cat') {
-    categorias = newList.length ? newList : ["Outros"];
+    categorias.splice(0, categorias.length, ...(newList.length ? newList : ["Outros"]));
     localStorage.setItem('mgc_cats', JSON.stringify(categorias));
   } else {
-    tagsList = newList.length ? newList : ["Pix"];
+    tagsList.splice(0, tagsList.length, ...(newList.length ? newList : ["Pix"]));
     localStorage.setItem('mgc_tags', JSON.stringify(tagsList));
   }
+  saveConfig();
   refreshAllSelects();
   document.getElementById('catManagerModal').classList.remove('open');
 };
 
+function saveConfig(){
+  return sendToCloud({ id:'config', tipo:'config', data:'', valor:0, descricao: JSON.stringify({cats:categorias, tags:tagsList}), categoria:'', tag:'', extra:false, image:'', imageName:'' });
+}
+
+function applyCloudConfig(cfgItem){
+  let cfg = null;
+  try { cfg = cfgItem ? JSON.parse(cfgItem.descricao) : null; } catch(e){}
+  const cats = cfg && Array.isArray(cfg.cats) ? cfg.cats.slice() : categorias.slice();
+  const tags = cfg && Array.isArray(cfg.tags) ? cfg.tags.slice() : tagsList.slice();
+  expenses.concat(pendingBills).forEach(e=>{ if(e.categoria && !cats.includes(e.categoria)) cats.push(e.categoria); });
+  expenses.forEach(e=>{ if(e.tag && !tags.includes(e.tag)) tags.push(e.tag); });
+  categorias.splice(0, categorias.length, ...cats);
+  tagsList.splice(0, tagsList.length, ...tags);
+  localStorage.setItem('mgc_cats', JSON.stringify(categorias));
+  localStorage.setItem('mgc_tags', JSON.stringify(tagsList));
+  refreshAllSelects();
+  if(!cfgItem) saveConfig();
+}
+
 async function loadFromCloud(){
-  document.getElementById('loadingStatus').textContent = 'Sincronizando com a nuvem...';
+  const status = document.getElementById('loadingStatus');
+  // mostra na hora o que ficou guardado da última vez
+  if(loadCache()){ render(); status.textContent = 'Atualizando...'; }
+  else status.textContent = 'Sincronizando com a nuvem...';
   try {
     const res = await fetch(WEBHOOK_URL);
     const data = await res.json();
     
-    expenses = [];
-    obraMovs = [];
-    pendingBills = [];
-    piggyMovements = [];
-    
+    const nExp = [], nObra = [], nPend = [], nPig = [];
+    let cfgItem = null;
     if(Array.isArray(data)){
       data.forEach(item => {
-        if(item.tipo === 'despesa') expenses.push(item);
-        else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') obraMovs.push(item);
-        else if(item.tipo === 'pendente') pendingBills.push(item);
-        else if(item.tipo === 'porquinho') piggyMovements.push(item);
+        if(item.tipo === 'despesa') nExp.push(item);
+        else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') nObra.push(item);
+        else if(item.tipo === 'pendente') nPend.push(item);
+        else if(item.tipo === 'porquinho') nPig.push(item);
+        else if(item.tipo === 'config') cfgItem = item;
       });
     }
-    document.getElementById('loadingStatus').textContent = '';
+    expenses = nExp; obraMovs = nObra; pendingBills = nPend; piggyMovements = nPig;
+    applyCloudConfig(cfgItem);
+    saveCache();
+    status.textContent = '';
     render();
   } catch(e) {
-    document.getElementById('loadingStatus').textContent = '⚠️ Modo Offline (Dados locais/Erro na nuvem)';
+    status.textContent = '⚠️ Modo Offline (Dados locais/Erro na nuvem)';
     render();
   }
 }
 
 async function sendToCloud(payload){
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
-  } catch(e) { console.error('Erro ao salvar na nuvem:', e); }
+    try { return await res.json(); } catch(_) { return null; }
+  } catch(e) { console.error('Erro ao salvar na nuvem:', e); return null; }
 }
 
 function render(){
@@ -744,8 +810,8 @@ function render(){
     
     let thumbHtml = '<div class="ph">🧾</div>';
     if(e.image) {
-      const imgSrc = e.image.startsWith('http') ? e.image : `data:image/jpeg;base64,${e.image}`;
-      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.src='https://placehold.co/40x40/FAF6EC/7A7264?text=🧾'">`;
+      const imgSrc = imgUrl(e.image, 200);
+      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.onerror=null;this.outerHTML='&lt;div class=ph&gt;🧾&lt;/div&gt;'">`;
     }
 
     d.innerHTML = `${thumbHtml}
@@ -783,7 +849,7 @@ function render(){
 
 function openImageViewer(imageStr){
   if(!imageStr) return;
-  const imgSrc = imageStr.startsWith('http') ? imageStr : `data:image/jpeg;base64,${imageStr}`;
+  const imgSrc = imgUrl(imageStr, 1600);
   document.getElementById('imageViewerImg').src = imgSrc;
   document.getElementById('imageViewerBg').classList.add('open');
 }
@@ -810,7 +876,7 @@ function openDetailModal(item){
   `;
   const imgContainer = document.getElementById('detImageContainer');
   if(item.image) {
-    const imgSrc = item.image.startsWith('http') ? item.image : `data:image/jpeg;base64,${item.image}`;
+    const imgSrc = imgUrl(item.image, 800);
     imgContainer.innerHTML = `
       <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">Comprovante Anexado (Clique para ampliar):</div>
       <img src="${imgSrc}" id="detModalImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--line);object-fit:contain;cursor:pointer;" alt="Comprovante">
@@ -846,7 +912,7 @@ document.getElementById('detEdit').onclick = () => {
   const prev = document.getElementById('preview');
   if(currentDetailItem.image) {
     prev.style.display = 'flex';
-    const imgSrc = currentDetailItem.image.startsWith('http') ? currentDetailItem.image : `data:image/jpeg;base64,${currentDetailItem.image}`;
+    const imgSrc = imgUrl(currentDetailItem.image, 400);
     prev.innerHTML = `<img src="${imgSrc}"><span>Comprovante existente</span>`;
   } else {
     prev.style.display = 'none';
@@ -898,7 +964,7 @@ function renderPendingList(){
   const l = document.getElementById('pendList');
   l.innerHTML = '';
   
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayStr();
   const todayTime = new Date(todayStr).getTime();
   let alertCount = 0;
 
@@ -929,8 +995,8 @@ function renderPendingList(){
     
     let thumbHtml = '<div class="ph" style="background:'+(isPaid?'#E6F4EA':(isAlert?'#FCE8E6':'#FFF0DB'))+'; color:'+(isPaid?'#137333':(isAlert?'var(--stamp)':'#B36B00'))+';">'+(isPaid?'✓':(isAlert?'⚠️':'⏳'))+'</div>';
     if(p.image) {
-      const imgSrc = p.image.startsWith('http') ? p.image : `data:image/jpeg;base64,${p.image}`;
-      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.src='https://placehold.co/40x40/FAF6EC/7A7264?text=⏳'">`;
+      const imgSrc = imgUrl(p.image, 200);
+      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.onerror=null;this.outerHTML='&lt;div class=ph&gt;⏳&lt;/div&gt;'">`;
     }
 
     d.innerHTML = `${thumbHtml}
@@ -1000,7 +1066,7 @@ function openPendingDetail(id){
   const prev = document.getElementById('pendPreview');
   if(p.image) {
     prev.style.display = 'flex';
-    const imgSrc = p.image.startsWith('http') ? p.image : `data:image/jpeg;base64,${p.image}`;
+    const imgSrc = imgUrl(p.image, 200);
     prev.innerHTML = `<img src="${imgSrc}"><span>Anexo existente</span>`;
   } else {
     prev.style.display = 'none';
@@ -1031,7 +1097,7 @@ async function payPending(id){
   const doc = {
     id: 'mgc_'+Date.now(), 
     tipo: 'despesa', 
-    data: new Date().toISOString().slice(0,10), 
+    data: todayStr(), 
     valor: p.valor,
     descricao: p.descricao,
     categoria: p.categoria,
@@ -1064,10 +1130,10 @@ document.getElementById('fabBtn').onclick = () => {
     document.getElementById('catAddRow').style.display='none';
     document.getElementById('tagAddRow').style.display='none';
     document.getElementById('fDescontarObra').checked=false;
-    document.getElementById('fData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('fData').value = todayStr();
     document.getElementById('sheetBg').classList.add('open');
   } else if(activeTab === 'tabObra') {
-    document.getElementById('obraRecData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('obraRecData').value = todayStr();
     document.getElementById('obraRecValor').value = '';
     document.getElementById('obraRecDesc').value = '';
     document.getElementById('obraRecSheet').classList.add('open');
@@ -1077,7 +1143,7 @@ document.getElementById('fabBtn').onclick = () => {
     pendingBillImageBase64 = null;
     pendingBillImageName = null;
     document.getElementById('pendPreview').style.display = 'none';
-    document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pendData').value = todayStr();
     document.getElementById('pendValor').value = '';
     document.getElementById('pendDesc').value = '';
     document.getElementById('pendFormError').textContent = '';
@@ -1102,7 +1168,8 @@ document.getElementById('fileInput').onchange = async (ev) => {
   const reader = new FileReader();
 
   reader.onload = async function(e) {
-    const fullDataUrl = e.target.result;
+    document.getElementById('formError').textContent = '';
+    const fullDataUrl = await compressImage(e.target.result);
     pendingImageBase64 = fullDataUrl.split(',')[1];
     prev.style.display = 'flex';
     prev.innerHTML = `<img src="${fullDataUrl}"><span>Comprovante anexado</span>`;
@@ -1189,8 +1256,8 @@ document.getElementById('pendFileInput').onchange = (ev) => {
   pendingBillImageName = file.name || 'boleto.jpg';
   const prev = document.getElementById('pendPreview');
   const reader = new FileReader();
-  reader.onload = function(e) {
-    const fullDataUrl = e.target.result;
+  reader.onload = async function(e) {
+    const fullDataUrl = await compressImage(e.target.result);
     pendingBillImageBase64 = fullDataUrl.split(',')[1];
     prev.style.display = 'flex';
     prev.innerHTML = `<img src="${fullDataUrl}"><span>Boleto/Comprovante anexado</span>`;
@@ -1276,7 +1343,7 @@ document.getElementById('saveAdd').onclick = async ()=>{
     tag: selectedTag,
     extra: document.getElementById('fDescontarObra').checked,
     image: finalImage,
-    imageName: finalImageName
+    imageName: finalImage ? buildImageName(data, document.getElementById('fDesc').value.trim() || 'Despesa') : ''
   };
   
   if(editingExpenseId) {
@@ -1289,8 +1356,9 @@ document.getElementById('saveAdd').onclick = async ()=>{
   }
 
   sheetBg.classList.remove('open');
-  render();
-  await sendToCloud(doc);
+  render(); saveCache();
+  const r = await sendToCloud(doc);
+  if(r && r.image && doc.image !== r.image){ doc.image = r.image; doc.imageName = r.imageName || doc.imageName; render(); saveCache(); }
 };
 
 const obraRecSheet = document.getElementById('obraRecSheet');
@@ -1313,7 +1381,7 @@ document.getElementById('openPendAdd').onclick = () => {
   pendingBillImageBase64 = null;
   pendingBillImageName = null;
   document.getElementById('pendPreview').style.display = 'none';
-  document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pendData').value = todayStr();
   document.getElementById('pendValor').value = '';
   document.getElementById('pendDesc').value = '';
   document.getElementById('pendFormError').textContent = '';
@@ -1352,7 +1420,7 @@ document.getElementById('pendSave').onclick = async () => {
     pago: editingPendingId ? (pendingBills.find(p=>p.id===editingPendingId)?.pago || false) : false,
     extra: false,
     image: finalImage,
-    imageName: finalImageName
+    imageName: finalImage ? buildImageName(data, descricao, 'Venc') : ''
   };
 
   if(editingPendingId) {
@@ -1368,8 +1436,9 @@ document.getElementById('pendSave').onclick = async () => {
   }
 
   pendSheetBg.classList.remove('open');
-  render();
-  await sendToCloud(doc);
+  render(); saveCache();
+  const r = await sendToCloud(doc);
+  if(r && r.image && doc.image !== r.image){ doc.image = r.image; doc.imageName = r.imageName || doc.imageName; render(); saveCache(); }
 };
 
 const piggySheetBg = document.getElementById('piggySheetBg');
@@ -1386,7 +1455,7 @@ document.getElementById('piggyCancel').onclick = ()=> piggySheetBg.classList.rem
 document.getElementById('piggySave').onclick = async ()=>{
   const val = parseFloat(document.getElementById('pValor').value.toString().replace(',', '.'));
   if(isNaN(val) || val <= 0) return;
-  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString().slice(0,10), extra: piggyActionType, image: '' };
+  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: todayStr(), extra: piggyActionType, image: '' };
   piggyMovements.unshift(doc);
   piggySheetBg.classList.remove('open');
   render();
@@ -1437,7 +1506,7 @@ function doExport(scope){
         e.categoria || '', 
         e.tag || '', 
         (e.extra === true || e.extra === 'true') ? 'Sim' : 'Não', 
-        e.image ? (e.image.startsWith('http') ? e.image : 'Anexado') : 'Não'
+        e.image ? (e.image.startsWith('http') ? (driveId(e.image) ? 'https://drive.google.com/file/d/'+driveId(e.image)+'/view' : e.image) : 'Anexado') : 'Não'
       ])
     ];
     
