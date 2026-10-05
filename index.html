@@ -1,919 +1,1290 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MGC - Gestão Financeira Inteligente</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #F4F1EA;
-            color: #2D2A26;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .custom-shadow {
-            box-shadow: 0 4px 20px -2px rgba(45, 42, 38, 0.08);
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #EFECE6;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #D5CEC1;
-            border-radius: 3px;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.25s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MGC - Gerenciador Financeiro Pessoal</title>
+<style>
+:root{
+  --paper:#FAF6EC; --ink:#221E17; --sub:#7A7264; --line:#DCD3BE;
+  --stamp:#AE3A2C; --cash:#33553B; --card:#FFFDF9; --piggy:#E68A00;
+  --cat0:#AE3A2C;--cat1:#33553B;--cat2:#3D5A80;--cat3:#8B5E34;--cat4:#7A4C6E;--cat5:#5A6650;--cat6:#8A7A3F;
+  --tag0:#3D5A80;--tag1:#8B5E34;--tag2:#33553B;--tag3:#7A4C6E;--tag4:#AE3A2C;
+}
+body{
+  margin:0; padding:12px; background:var(--paper); color:var(--ink);
+  font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",monospace;}
+.wrap{max-width:480px;margin:0 auto;padding-bottom:60px;}
+
+/* Tela de Login por Senha */
+#lockScreen{
+  position:fixed; inset:0; background:var(--paper); z-index:999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;
+}
+#lockScreen h2{font-size:22px; margin-bottom:8px; color:var(--ink);}
+#lockScreen p{font-size:13px; color:var(--sub); margin-bottom:20px;}
+.lock-input{
+  width:100%; max-width:280px; padding:12px; border:1px solid var(--line); border-radius:8px;
+  background:var(--card); color:var(--ink); font-size:15px; text-align:center; margin-bottom:12px; outline:none;
+}
+.lock-btn{
+  width:100%; max-width:280px; padding:12px; border-radius:8px; border:none;
+  background:var(--cash); color:#fff; font-size:14px; font-weight:700; cursor:pointer;
+}
+#lockError{color:var(--stamp); font-size:12px; margin-top:12px; max-width:280px;}
+
+header{padding:8px 0 12px; display:flex; justify-content:center; align-items:center; position:relative;}
+.brand h1{font-size:22px;letter-spacing:.08em;font-weight:800;margin:0;color:var(--ink);text-align:center;width:100%;}
+.header-actions{position:absolute; right:0; display:flex; gap:6px; z-index:2;}
+.header-left{position:absolute; left:0; display:flex; gap:6px; z-index:2;}
+.privacy-btn{background:var(--card);border:1px solid var(--line);color:var(--sub);font-size:14px;cursor:pointer;padding:6px 8px;border-radius:8px;}
+
+.nav-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--line);padding:4px;border-radius:10px;}
+.nav-tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--sub);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .2s;}
+.nav-tab.active{background:var(--card);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+
+.view-section{display:none;}
+.view-section.active{display:block;}
+
+.monthnav{display:flex;align-items:center;justify-content:center;gap:16px;margin:4px 0 14px;}
+.monthnav button{
+  background:var(--card);border:1px solid var(--line);color:var(--ink);width:32px;height:32px;border-radius:50%;
+  font-size:15px;cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.monthnav span{font-size:14px;font-weight:700;min-width:150px;text-align:center;text-transform:capitalize;}
+
+.filterrow{display:flex;gap:8px;margin-bottom:12px;}
+.filterrow select{flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;font-weight:500;}
+
+.totalcard{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+.totalcard .lbl{font-size:10px;letter-spacing:.1em;color:var(--sub);text-transform:uppercase;font-weight:700;}
+.totalcard .amt{font-size:28px;font-weight:800;margin-top:4px;color:var(--ink);}
+.totalcard .cnt{font-size:11px;color:var(--sub);margin-top:2px;}
+
+.piggy-card{
+  background:linear-gradient(135deg, #FFF8ED 0%, var(--card) 100%);
+  border:1px solid #F5D3A0; border-radius:12px; padding:14px; margin-bottom:14px;
+}
+.piggy-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+.piggy-title{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#B36B00;}
+.piggy-amt{font-size:22px; font-weight:800; color:#804C00;}
+.piggy-actions{display:flex; gap:8px; margin-top:8px;}
+.piggy-btn{
+  flex:1; padding:7px; border-radius:7px; border:1px solid #F0C280; background:#FFF0DB;
+  color:#804C00; font-size:11px; font-weight:700; cursor:pointer; text-align:center;
+}
+.piggy-btn.withdraw{background:var(--card); border-color:var(--line); color:var(--sub);}
+
+.obra-summary-box{
+  background:linear-gradient(135deg, #FFF8ED 0%, var(--card) 100%);
+  border:1px solid #F5D3A0; border-radius:14px; padding:14px; margin-bottom:14px;
+}
+.obra-summary-title{font-size:12px; font-weight:700; color:#B36B00; margin-bottom:10px;}
+.obra-grid{display:flex; gap:6px;}
+.obra-metric{flex:1; background:var(--card); border:1px solid #F0C280; border-radius:8px; padding:8px 4px; text-align:center;}
+.obra-metric .m-lbl{font-size:8px; font-weight:700; color:var(--sub); text-transform:uppercase;}
+.obra-metric .m-val{font-size:12px; font-weight:800; margin-top:3px; color:var(--ink); word-break:break-all;}
+
+.exportrow{display:flex;gap:8px;margin-bottom:6px;}
+.expbtn{
+  flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);
+  color:var(--ink);font-size:11px;font-weight:600;cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;
+}
+.breakdown{margin-bottom:16px;}
+.brow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;}
+.brow .dot{width:7px;height:7px;border-radius:2px;flex:0 0 auto;}
+.brow .name{flex:1;color:var(--ink);font-weight:500;}
+.brow .bar{flex:2;height:4px;background:var(--line);border-radius:2px;overflow:hidden;}
+.brow .bar i{display:block;height:100%;border-radius:2px;}
+.brow .val{color:var(--sub);min-width:58px;text-align:right;}
+
+h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px;font-weight:700;}
+
+.stub{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;
+  display:flex;gap:10px;align-items:center;
+}
+.stub.paid{opacity:0.65; background: #F4F1EA;}
+.stub img{width:38px;height:38px;object-fit:cover;border-radius:6px;flex:0 0 auto;border:1px solid var(--line);cursor:pointer;}
+.stub .ph{width:38px;height:38px;border-radius:6px;flex:0 0 auto;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub);}
+.stub .mid{flex:1;min-width:0;}
+.stub .desc{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stub.paid .desc{text-decoration: line-through;}
+.stub .meta{font-size:10px;color:var(--sub);margin-top:2px;display:flex;gap:6px;align-items:center;}
+.chip{padding:2px 6px;border-radius:10px;font-size:9px;color:#fff;font-weight:600;white-space:nowrap;}
+.chip.obra{background:#B36B00;}
+.chip.paid-badge{background:#33553B;}
+.stub .valcol{text-align:right;flex:0 0 auto;}
+.stub .val{font-weight:700;font-size:13px;}
+.stub .date{font-size:9px;color:var(--sub);margin-top:2px;}
+.stub-del{background:none;border:none;color:var(--sub);opacity:0.4;font-size:13px;cursor:pointer;padding:2px;}
+.stub-del:hover{opacity:1;color:var(--stamp);}
+
+.empty{text-align:center;color:var(--sub);font-size:12px;padding:24px 10px;}
+.fab{
+  position:fixed; right:16px; bottom:20px;
+  width:50px;height:50px;border-radius:50%;background:var(--stamp);color:#fff;border:none;
+  font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;z-index:10; font-weight:300;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:flex-end;z-index:20;}
+.sheet-bg.open{display:flex;}
+.sheet{
+  background:var(--paper);width:100%;max-height:85vh;overflow-y:auto;border-radius:16px 16px 0 0;
+  padding:16px 16px 24px; box-sizing:border-box;
+}
+.sheet h3{margin:0 0 12px;font-size:15px;font-weight:700;}
+.field{margin-bottom:10px;}
+.field label{display:block;font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;font-weight:700;}
+.field input,.field select{
+  width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);
+  font-size:13px;font-family:inherit;box-sizing:border-box;
+}
+.row2{display:flex;gap:8px;margin-bottom:4px;}
+.row2 .field{flex:1;margin-bottom:0; min-width:0;}
+.photobtn{
+  width:100%;padding:9px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);
+  font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.preview{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--sub);}
+.preview img{width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
+.note{font-size:10px;color:var(--sub);margin-top:4px;}
+.btnrow{display:flex;gap:8px;margin-top:12px;}
+.btn{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;}
+.btn.primary{background:var(--cash);color:#fff;}
+.btn.piggy-save{background:var(--piggy);color:#fff;}
+.addrow{display:flex;gap:6px;margin-top:6px;}
+.addrow input{flex:1;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font-size:12px;}
+.addrow button{padding:7px 10px;border:none;border-radius:6px;background:var(--cash);color:#fff;font-size:12px;cursor:pointer;}
+.editlink{background:none;border:none;color:var(--sub);font-size:9px;text-decoration:underline;cursor:pointer;padding:0;margin-left:4px;text-transform:none;}
+.checkbox-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;margin-top:4px;}
+.checkbox-label input{width:16px;height:16px;accent-color:var(--cash);cursor:pointer;}
+.piggy-history{margin-top:10px; border-top:1px dashed var(--line); padding-top:6px; max-height:100px; overflow-y:auto;}
+.piggy-h-item{display:flex; justify-content:space-between; font-size:10px; color:var(--sub); padding:2px 0;}
+.piggy-h-item.plus{color:var(--cash);}
+.piggy-h-item.minus{color:var(--stamp);}
+#loadingStatus{text-align:center; font-size:11px; color:var(--sub); margin:6px 0;}
+
+.mgc-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.mgc-manager-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+}
+.mgc-del-btn {
+  background: none;
+  border: none;
+  color: var(--stamp);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+}
+.mgc-del-btn:hover { background: rgba(174, 58, 44, 0.1); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body class="h-full flex flex-col antialiased selection:bg-amber-200">
+<body>
 
-    <div id="app" class="flex flex-col min-h-full max-w-md mx-auto w-full bg-[#FAF8F5] shadow-2xl relative overflow-hidden">
-        
-        <!-- Top Bar / Header -->
-        <header class="pt-6 px-5 pb-4 bg-[#FAF8F5] sticky top-0 z-30 border-b border-[#EFECE6]">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <button onclick="togglePrivacy()" class="p-2 rounded-xl bg-[#EFECE6]/60 hover:bg-[#EFECE6] transition active:scale-95 text-[#2D2A26]" title="Ocultar/Exibir Valores">
-                        <span id="privacy-icon">👁️</span>
-                    </button>
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#E5E0D5] text-[#5C554B]" id="sync-status">Sincronizado</span>
-                </div>
-                <h1 class="text-xl font-bold tracking-wider text-[#2D2A26]">MGC</h1>
-                <button onclick="openConfigModal()" class="p-2 rounded-xl bg-[#EFECE6]/60 hover:bg-[#EFECE6] transition active:scale-95 text-[#2D2A26]" title="Configurações & Planilha">
-                    ⚙️
-                </button>
-            </div>
+<!-- Tela de Login por Senha -->
+<div id="lockScreen" style="display:none;">
+  <h2>🔒 MGC Financeiro</h2>
+  <p>Digite sua senha de acesso para continuar:</p>
+  <input type="password" id="lockPasswordInput" class="lock-input" placeholder="Senha secreta" />
+  <button id="lockSubmitBtn" class="lock-btn">Entrar</button>
+  <div id="lockError"></div>
+</div>
 
-            <!-- Navigation Tabs -->
-            <div class="flex bg-[#EFECE6]/70 p-1 rounded-2xl gap-1">
-                <button onclick="switchTab('despesas')" id="tab-despesas" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm bg-white text-[#2D2A26]">
-                    <span>📄</span> Despesas
-                </button>
-                <button onclick="switchTab('obra')" id="tab-obra" class="flex-1 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-[#7A7367] hover:text-[#2D2A26]">
-                    <span>🏗️</span> Obra
-                </button>
-                <button onclick="switchTab('pendentes')" id="tab-pendentes" class="flex-1 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-[#7A7367] hover:text-[#2D2A26]">
-                    <span>⏳</span> Pendentes
-                </button>
-                <button onclick="switchTab('porquinho')" id="tab-porquinho" class="flex-1 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-[#7A7367] hover:text-[#2D2A26]">
-                    <span>🐷</span> Porquinho
-                </button>
-            </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto pb-28">
-            
-            <!-- VIEW: DESPESAS -->
-            <div id="view-despesas" class="p-5 space-y-4 animate-fade-in">
-                <!-- Month Selector -->
-                <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-[#EFECE6] custom-shadow">
-                    <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-[#FAF8F5] hover:bg-[#EFECE6] transition text-[#5C554B] font-bold">‹</button>
-                    <div class="text-center">
-                        <span id="current-month-label" class="text-sm font-bold text-[#2D2A26] capitalize">Outubro de 2026</span>
-                    </div>
-                    <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-[#FAF8F5] hover:bg-[#EFECE6] transition text-[#5C554B] font-bold">›</button>
-                </div>
-
-                <!-- Filters -->
-                <div class="grid grid-cols-2 gap-2">
-                    <select id="filter-category" onchange="renderDespesas()" class="w-full bg-white border border-[#EFECE6] rounded-xl px-3 py-2.5 text-xs font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                        <option value="">Todas categorias</option>
-                    </select>
-                    <select id="filter-tag" onchange="renderDespesas()" class="w-full bg-white border border-[#EFECE6] rounded-xl px-3 py-2.5 text-xs font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                        <option value="">Todas tags</option>
-                    </select>
-                </div>
-
-                <!-- Total Card -->
-                <div class="bg-white p-5 rounded-2xl border border-[#EFECE6] custom-shadow text-center space-y-1">
-                    <span class="text-[11px] font-semibold tracking-wider text-[#7A7367] uppercase">Total de Despesas</span>
-                    <h2 id="total-despesas-val" class="text-2xl font-extrabold text-[#2D2A26]">R$ 0,00</h2>
-                </div>
-
-                <!-- Despesas List -->
-                <div class="space-y-2.5" id="despesas-list-container">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-
-            <!-- VIEW: OBRA -->
-            <div id="view-obra" class="p-5 space-y-4 hidden animate-fade-in">
-                <div class="bg-white p-5 rounded-2xl border border-[#EFECE6] custom-shadow text-center space-y-1">
-                    <span class="text-[11px] font-semibold tracking-wider text-[#7A7367] uppercase">Total Investido na Obra</span>
-                    <h2 id="total-obra-val" class="text-2xl font-extrabold text-[#2D2A26]">R$ 0,00</h2>
-                </div>
-                <div class="space-y-2.5" id="obra-list-container">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-
-            <!-- VIEW: PENDENTES -->
-            <div id="view-pendentes" class="p-5 space-y-4 hidden animate-fade-in">
-                <button onclick="openPendenciaModal()" class="w-full py-3.5 bg-[#3A5A40] text-white rounded-2xl font-bold text-sm shadow-md hover:bg-[#344E41] transition active:scale-[0.98] flex items-center justify-center gap-2">
-                    <span>+</span> Adicionar Conta Pendente
-                </button>
-                <div class="space-y-3" id="pendentes-list-container">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-
-            <!-- VIEW: PORQUINHO -->
-            <div id="view-porquinho" class="p-5 space-y-4 hidden animate-fade-in">
-                <div class="bg-white p-5 rounded-2xl border border-[#EFECE6] custom-shadow text-center space-y-2">
-                    <span class="text-[11px] font-semibold tracking-wider text-[#7A7367] uppercase">Saldo no Porquinho</span>
-                    <h2 id="total-porquinho-val" class="text-2xl font-extrabold text-[#2D2A26]">R$ 0,00</h2>
-                    <div class="flex gap-2 pt-2">
-                        <button onclick="openPorquinhoModal('depositar')" class="flex-1 py-2 bg-[#3A5A40] text-white rounded-xl text-xs font-bold">Depositar</button>
-                        <button onclick="openPorquinhoModal('retirar')" class="flex-1 py-2 bg-[#D97706] text-white rounded-xl text-xs font-bold">Resgatar</button>
-                    </div>
-                </div>
-                <div class="space-y-2.5" id="porquinho-list-container">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Floating Action Button (FAB) -->
-        <div class="absolute bottom-6 right-6 z-20">
-            <button onclick="openDespesaModal()" class="w-14 h-14 bg-[#A34739] hover:bg-[#8D3B2E] text-white rounded-full flex items-center justify-center shadow-xl transition active:scale-95 text-2xl font-bold">
-                +
-            </button>
-        </div>
-
-        <!-- ================= MODAL: NOVA DESPESA (Melhorado o Design - Espaçoso e Limpo) ================= -->
-        <div id="modal-despesa" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs animate-fade-in">
-            <div class="bg-[#FAF8F5] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#EFECE6]">
-                
-                <!-- Modal Header -->
-                <div class="p-5 border-b border-[#EFECE6] flex items-center justify-between">
-                    <h3 id="modal-despesa-title" class="text-base font-bold text-[#2D2A26]">Nova Despesa MGC</h3>
-                    <button onclick="closeDespesaModal()" class="w-8 h-8 rounded-full bg-[#EFECE6] flex items-center justify-center text-[#5C554B] hover:bg-[#E5E0D5]">✕</button>
-                </div>
-
-                <!-- Modal Body (Scrollable com espaçamento confortável) -->
-                <div class="p-6 overflow-y-auto space-y-5">
-                    
-                    <!-- Anexo Comprovante -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Comprovante</label>
-                        <label class="border-2 border-dashed border-[#D5CEC1] hover:border-[#3A5A40] bg-white rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition group">
-                            <span class="text-xl mb-1 group-hover:scale-110 transition">📎</span>
-                            <span class="text-xs font-semibold text-[#3A5A40]" id="comprovante-label">Anexar ou colar comprovante</span>
-                            <span class="text-[10px] text-[#7A7367] mt-0.5">Suporta Imagem ou PDF</span>
-                            <input type="file" id="comprovante-input" accept="image/*,application/pdf" class="hidden" onchange="handleFileSelect(event)">
-                        </label>
-                    </div>
-
-                    <!-- Data e Valor -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Data</label>
-                            <input type="date" id="inp-data" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Valor (R$)</label>
-                            <input type="text" id="inp-valor" placeholder="0,00" oninput="formatCurrencyInput(this)" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-bold text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                        </div>
-                    </div>
-
-                    <!-- Descrição -->
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Descrição / Destino</label>
-                        <input type="text" id="inp-descricao" placeholder="Ex: Pix para João da Silva" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                    </div>
-
-                    <!-- Categoria e Tag -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Categoria</label>
-                                <button onclick="openManageCategories()" class="text-[10px] font-bold text-[#3A5A40] hover:underline">editar</button>
-                            </div>
-                            <select id="inp-categoria" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                                <!-- Populated -->
-                            </select>
-                        </div>
-                        <div class="space-y-1.5">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Tag</label>
-                                <button onclick="openManageTags()" class="text-[10px] font-bold text-[#3A5A40] hover:underline">editar</button>
-                            </div>
-                            <select id="inp-tag" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none focus:border-[#3A5A40]">
-                                <!-- Populated -->
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Descontar da Obra -->
-                    <div class="pt-1">
-                        <label class="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-[#EFECE6] cursor-pointer hover:border-[#3A5A40] transition">
-                            <input type="checkbox" id="inp-obra" class="w-4 h-4 rounded text-[#3A5A40] focus:ring-[#3A5A40]">
-                            <span class="text-xs font-semibold text-[#2D2A26]">🏗️ Descontar da Obra</span>
-                        </label>
-                    </div>
-
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="p-5 border-t border-[#EFECE6] bg-[#FAF8F5] flex gap-3">
-                    <button onclick="closeDespesaModal()" class="flex-1 py-3.5 bg-[#EFECE6] hover:bg-[#E5E0D5] text-[#2D2A26] rounded-2xl font-bold text-sm transition">Cancelar</button>
-                    <button onclick="saveDespesa()" class="flex-1 py-3.5 bg-[#3A5A40] hover:bg-[#344E41] text-white rounded-2xl font-bold text-sm transition shadow-md">Salvar</button>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- ================= MODAL: CONTA PENDENTE ================= -->
-        <div id="modal-pendencia" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs animate-fade-in">
-            <div class="bg-[#FAF8F5] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#EFECE6]">
-                <div class="p-5 border-b border-[#EFECE6] flex items-center justify-between">
-                    <h3 class="text-base font-bold text-[#2D2A26]">Adicionar Conta Pendente</h3>
-                    <button onclick="closePendenciaModal()" class="w-8 h-8 rounded-full bg-[#EFECE6] flex items-center justify-center text-[#5C554B]">✕</button>
-                </div>
-                <div class="p-6 overflow-y-auto space-y-5">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Vencimento</label>
-                            <input type="date" id="pend-data" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Valor (R$)</label>
-                            <input type="text" id="pend-valor" placeholder="0,00" oninput="formatCurrencyInput(this)" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-bold text-[#2D2A26] outline-none">
-                        </div>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Nome / Descrição</label>
-                        <input type="text" id="pend-nome" placeholder="Ex: Conta de Luz" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none">
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">Categoria</label>
-                        <select id="pend-categoria" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-sm font-medium text-[#2D2A26] outline-none">
-                            <!-- Populated -->
-                        </select>
-                    </div>
-                </div>
-                <div class="p-5 border-t border-[#EFECE6] flex gap-3">
-                    <button onclick="closePendenciaModal()" class="flex-1 py-3.5 bg-[#EFECE6] text-[#2D2A26] rounded-2xl font-bold text-sm">Cancelar</button>
-                    <button onclick="savePendencia()" class="flex-1 py-3.5 bg-[#3A5A40] text-white rounded-2xl font-bold text-sm shadow-md">Salvar Pendência</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= MODAL: CONFIGURAÇÕES & WEBHOOK ================= -->
-        <div id="modal-config" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs animate-fade-in">
-            <div class="bg-[#FAF8F5] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl border border-[#EFECE6]">
-                <div class="p-5 border-b border-[#EFECE6] flex items-center justify-between">
-                    <h3 class="text-base font-bold text-[#2D2A26]">Configurações da Planilha</h3>
-                    <button onclick="closeConfigModal()" class="w-8 h-8 rounded-full bg-[#EFECE6] flex items-center justify-center text-[#5C554B]">✕</button>
-                </div>
-                <div class="p-6 overflow-y-auto space-y-4">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-semibold text-[#5C554B] uppercase tracking-wider">URL do Webhook (Google Apps Script)</label>
-                        <input type="text" id="cfg-webhook" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white border border-[#EFECE6] rounded-2xl px-4 py-3 text-xs font-medium text-[#2D2A26] outline-none">
-                        <p class="text-[11px] text-[#7A7367]">Insira a URL gerada ao publicar seu script no Google Sheets para sincronização automática em tempo real.</p>
-                    </div>
-                    <div class="pt-2 flex gap-2">
-                        <button onclick="testSync()" class="flex-1 py-3 bg-[#EFECE6] text-[#2D2A26] rounded-xl text-xs font-bold">Testar Conexão</button>
-                        <button onclick="exportDataJSON()" class="flex-1 py-3 bg-[#EFECE6] text-[#2D2A26] rounded-xl text-xs font-bold">Exportar Backup</button>
-                    </div>
-                </div>
-                <div class="p-5 border-t border-[#EFECE6] flex gap-3">
-                    <button onclick="closeConfigModal()" class="flex-1 py-3.5 bg-[#EFECE6] text-[#2D2A26] rounded-2xl font-bold text-sm">Cancelar</button>
-                    <button onclick="saveConfig()" class="flex-1 py-3.5 bg-[#3A5A40] text-white rounded-2xl font-bold text-sm shadow-md">Salvar Configurações</button>
-                </div>
-            </div>
-        </div>
-
+<div class="wrap">
+  <header>
+    <div class="header-left">
+      <button class="privacy-btn" id="privacyBtn" title="Esconder/Exibir Valores">👁</button>
     </div>
+    <div class="brand"><h1>MGC</h1></div>
+  </header>
 
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-    <script>
-        let state = {
-            webhookUrl: localStorage.getItem('mgc_webhook') || '',
-            activeTab: 'despesas',
-            currentDate: new Date(),
-            privacyMode: false,
-            despesas: JSON.parse(localStorage.getItem('mgc_despesas')) || [],
-            pendentes: JSON.parse(localStorage.getItem('mgc_pendentes')) || [],
-            porquinho: JSON.parse(localStorage.getItem('mgc_porquinho')) || [],
-            categorias: JSON.parse(localStorage.getItem('mgc_categorias')) || ['Alimentação', 'Moradia', 'Transporte', 'Lazer', 'Saúde', 'Outros'],
-            tags: JSON.parse(localStorage.getItem('mgc_tags')) || ['Pix', 'Cartão', 'Dinheiro', 'Boleto']
+  <div id="loadingStatus">Carregando dados da nuvem...</div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-target="tabDespesas">🧾 Despesas</button>
+    <button class="nav-tab" data-target="tabObra">🏗 Obra</button>
+    <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes</button>
+    <button class="nav-tab" data-target="tabPorquinho">🐷 Porquinho</button>
+  </div>
+
+  <!-- ABA DESPESAS -->
+  <div id="tabDespesas" class="view-section active">
+    <div class="monthnav">
+      <button id="prevM">‹</button>
+      <span id="monthLbl" class="mono"></span>
+      <button id="nextM">›</button>
+    </div>
+    <div class="filterrow">
+      <select id="filterCat"></select>
+      <select id="filterTag"></select>
+    </div>
+    <div class="totalcard">
+      <div class="lbl">Total de Despesas</div>
+      <div class="amt mono" id="totalAmt">R$ 0,00</div>
+      <div class="cnt" id="totalCnt">0 comprovantes</div>
+    </div>
+    <div class="exportrow">
+      <button class="expbtn" id="expMonth">📊 Exportar mês</button>
+      <button class="expbtn" id="expYear">📅 Exportar ano</button>
+    </div>
+    <div class="note" id="expNote" style="text-align:center; margin-bottom:10px;"></div>
+    <div id="breakdown" class="breakdown"></div>
+    <h2 class="sec">Lançamentos</h2>
+    <div id="list"></div>
+  </div>
+
+  <!-- ABA OBRA -->
+  <div id="tabObra" class="view-section">
+    <div class="obra-summary-box">
+      <div class="obra-summary-title">🏗 Resumo Financeiro da Obra</div>
+      <div class="obra-grid">
+        <div class="obra-metric"><div class="m-lbl">Recebido</div><div class="m-val mono" id="obraRec">R$ 0,00</div></div>
+        <div class="obra-metric"><div class="m-lbl">Gastos</div><div class="m-val mono" id="obraGast">R$ 0,00</div></div>
+        <div class="obra-metric"><div class="m-lbl">Saldo</div><div class="m-val mono" id="obraSald">R$ 0,00</div></div>
+      </div>
+    </div>
+    <div style="display:flex; margin-bottom:12px;">
+      <button class="btn primary" id="openObraRec" style="flex:1;">+ Aporte / Pix Recebido Obra</button>
+    </div>
+    <h2 class="sec">Histórico da Obra</h2>
+    <div id="obraList"></div>
+  </div>
+
+  <!-- ABA PENDENTES -->
+  <div id="tabPendentes" class="view-section">
+    <div style="display:flex; margin-bottom:12px;">
+      <button class="btn primary" id="openPendAdd" style="flex:1;">+ Adicionar Conta Pendente</button>
+    </div>
+    <h2 class="sec">Lembretes</h2>
+    <div id="pendList"></div>
+  </div>
+
+  <!-- ABA PORQUINHO -->
+  <div id="tabPorquinho" class="view-section">
+    <div class="piggy-card">
+      <div class="piggy-header">
+        <div class="piggy-title">🐷 Porquinho MGC</div>
+        <button class="editlink" id="togglePiggyHistory">ver histórico</button>
+      </div>
+      <div class="piggy-amt mono" id="piggyTotal">R$ 0,00</div>
+      <div class="piggy-actions">
+        <button class="piggy-btn" id="openPiggyAdd">+ Guardar</button>
+        <button class="piggy-btn withdraw" id="openPiggySub">- Retirar</button>
+      </div>
+      <div class="piggy-history" id="piggyHistoryList" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fabBtn" title="Adicionar">+</button>
+
+<!-- Modais -->
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet">
+    <h3 id="modalTitle">Nova Despesa MGC</h3>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button class="photobtn" id="photoBtn">📷 Anexar ou Ler comprovante</button>
+    <input type="text" id="pasteTarget" placeholder="📋 Toque aqui e segure para Colar o comprovante copiado" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--border);border-radius:8px;background:var(--bg-color);color:var(--text-muted);font-size:13px;text-align:center;">
+    <div class="preview" id="preview" style="display:none"></div>
+    <div class="note" id="ocrNote"></div>
+    <div class="row2" style="margin-top:10px;">
+      <div class="field"><label>Data</label><input type="date" id="fData"></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="fValor" placeholder="0,00"></div>
+    </div>
+    <div class="field"><label>Descrição / Nome do Destino</label><input type="text" id="fDesc" placeholder="Ex: Pix para João da Silva"></div>
+    <div class="row2">
+      <div class="field">
+        <label>Categoria <button type="button" class="editlink" id="editCatBtn">editar</button></label>
+        <select id="fCat"></select>
+        <div class="addrow" id="catAddRow" style="display:none;"><input type="text" id="catAddInput" placeholder="Nova"><button type="button" id="catAddBtn">OK</button></div>
+      </div>
+      <div class="field">
+        <label>Tag <button type="button" class="editlink" id="editTagBtn">editar</button></label>
+        <select id="fTag"></select>
+        <div class="addrow" id="tagAddRow" style="display:none;"><input type="text" id="tagAddInput" placeholder="Nova"><button type="button" id="tagAddBtn">OK</button></div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:8px;">
+      <label class="checkbox-label"><input type="checkbox" id="fDescontarObra"> 🏗️ Descontar da Obra</label>
+    </div>
+    <div class="note" id="formError" style="color:var(--stamp);"></div>
+    <div class="btnrow">
+      <button class="btn" id="cancelAdd" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn primary" id="saveAdd">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhes -->
+<div class="sheet-bg" id="detailSheetBg">
+  <div class="sheet">
+    <h3 id="detTitle">Detalhes do Lançamento</h3>
+    <div id="detContent" style="margin-bottom: 12px; font-size: 13px;"></div>
+    <div id="detImageContainer" style="margin-bottom: 12px; text-align: center;"></div>
+    <div class="btnrow">
+      <button class="btn" id="detClose" style="background:var(--line);color:var(--ink);">Fechar</button>
+      <button class="btn primary" id="detEdit">Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Zoom Imagem -->
+<div class="sheet-bg" id="imageViewerBg" style="z-index: 30; background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
+  <div style="position: relative; max-width: 90vw; max-height: 90vh; text-align: center; padding: 20px;">
+    <button id="imageViewerClose" style="position: absolute; top: 0; right: 0; background: var(--stamp); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; font-weight: bold; z-index: 35;">✕</button>
+    <img id="imageViewerImg" src="" style="max-width: 100%; max-height: 80vh; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" alt="Zoom">
+  </div>
+</div>
+
+<!-- Modal Gerenciar Categorias/Tags -->
+<div class="sheet-bg" id="catManagerModal">
+  <div class="sheet">
+    <h3 id="catManagerTitle">Editar categorias</h3>
+    <div id="catManagerList" style="max-height: 50vh; overflow-y: auto; margin-bottom: 12px;"></div>
+    <button class="photobtn" id="addNewCatFieldBtn" style="margin-bottom: 12px;">+ Adicionar nova</button>
+    <div class="btnrow">
+      <button class="btn" id="catManagerCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn primary" id="catManagerSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="obraRecSheet">
+  <div class="sheet">
+    <h3>🏗️ Recebimento da Obra</h3>
+    <div class="field"><label>Data</label><input type="date" id="obraRecData"></div>
+    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="obraRecValor" placeholder="0,00"></div>
+    <div class="field"><label>Descrição</label><input type="text" id="obraRecDesc" placeholder="Ex: Parcela Pix"></div>
+    <div class="btnrow">
+      <button class="btn" id="obraRecCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn primary" id="obraRecSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="pendSheetBg">
+  <div class="sheet">
+    <h3 id="pendModalTitle">⏳ Conta Pendente</h3>
+    <div class="field"><label>Vencimento</label><input type="date" id="pendData"></div>
+    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="pendValor" placeholder="0,00"></div>
+    <div class="field"><label>Descrição</label><input type="text" id="pendDesc" placeholder="Ex: IPTU"></div>
+    <div class="field"><label>Categoria</label><select id="pendCat"></select></div>
+    <div class="btnrow">
+      <button class="btn" id="pendCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn primary" id="pendSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="piggySheetBg">
+  <div class="sheet">
+    <h3 id="piggyModalTitle">🐷 Porquinho</h3>
+    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="pValor" placeholder="0,00"></div>
+    <div class="field"><label>Motivo</label><input type="text" id="pDesc" placeholder="Opcional"></div>
+    <div class="btnrow">
+      <button class="btn" id="piggyCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn piggy-save" id="piggySave">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// URL do Webhook do Google Apps Script
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwa95Y4VI4Ej3jBWur-saiTy4EfaGfwwOE35l5Pp02xwHVhgeN33xFuiMY8HcC1EYh1Gg/exec';
+
+const SENHA_CORRETA = '1234'; 
+const sessionLogged = localStorage.getItem('mgc_logged');
+
+if(sessionLogged === 'true') {
+  document.getElementById('lockScreen').style.display = 'none';
+  loadFromCloud();
+} else {
+  document.getElementById('lockScreen').style.display = 'flex';
+}
+
+document.getElementById('lockSubmitBtn').onclick = handlePasswordLogin;
+document.getElementById('lockPasswordInput').onkeydown = (e) => {
+  if(e.key === 'Enter') handlePasswordLogin();
+};
+
+function handlePasswordLogin() {
+  const senha = document.getElementById('lockPasswordInput').value.trim();
+  const errorEl = document.getElementById('lockError');
+  if(!senha) {
+    errorEl.textContent = 'Digite a senha.';
+    return;
+  }
+  if(senha === SENHA_CORRETA) {
+    localStorage.setItem('mgc_logged', 'true');
+    document.getElementById('lockScreen').style.display = 'none';
+    loadFromCloud();
+  } else {
+    errorEl.textContent = 'Senha incorreta. Tente novamente.';
+  }
+}
+
+const CATCOL = ["cat0","cat1","cat2","cat3","cat4","cat5","cat6"];
+function hashColor(name){
+  let h=0; const s=name||'Outros';
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+  return `var(--${CATCOL[Math.abs(h)%CATCOL.length]})`;
+}
+const catColor = hashColor;
+
+const TAGCOL = ["tag0","tag1","tag2","tag3","tag4"];
+function tagColor(name){
+  let h=0; const s=name||'Tag';
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+  return `var(--${TAGCOL[Math.abs(h)%TAGCOL.length]})`;
+}
+
+let categorias = JSON.parse(localStorage.getItem('mgc_cats') || '["Alimentação","Transporte","Moradia","Saúde","Lazer","Compras","Contas","Outros"]');
+let tagsList = JSON.parse(localStorage.getItem('mgc_tags') || '["Pix","Cartão","Dinheiro"]');
+let expenses = [];
+let obraMovs = [];
+let pendingBills = [];
+let piggyMovements = [];
+
+let cur = new Date(); cur.setDate(1);
+let pendingImageBase64 = null;
+let pendingImageName = null;
+let filterCategoria = 'todas', filterTag = 'todas';
+let piggyActionType = 'add';
+let privacyMode = JSON.parse(localStorage.getItem('mgc_privacy') || 'false');
+let activeTab = 'tabDespesas';
+let editingExpenseId = null;
+let editingPendingId = null;
+let currentDetailItem = null;
+
+const fmtMoney = n => privacyMode ? 'R$ •••••' : (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const monthKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+
+function formatDate(dateStr) {
+  if(!dateStr) return '';
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-');
+  if(parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.target;
+    document.getElementById(activeTab).classList.add('active');
+  };
+});
+
+const privacyBtn = document.getElementById('privacyBtn');
+function updatePrivacyIcon(){ privacyBtn.textContent = privacyMode ? '🙈' : '👁'; }
+privacyBtn.onclick = () => {
+  privacyMode = !privacyMode;
+  localStorage.setItem('mgc_privacy', JSON.stringify(privacyMode));
+  updatePrivacyIcon();
+  render();
+};
+updatePrivacyIcon();
+
+function renderOptions(selEl, list, addLabel){
+  const keep = selEl.value;
+  selEl.innerHTML='';
+  list.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;selEl.appendChild(o);});
+  const addOpt=document.createElement('option'); addOpt.value='__add__'; addOpt.textContent=addLabel;
+  selEl.appendChild(addOpt);
+  if(list.includes(keep)) selEl.value = keep;
+}
+
+const fCat = document.getElementById('fCat');
+const fTag = document.getElementById('fTag');
+const pendCat = document.getElementById('pendCat');
+const filterCatEl = document.getElementById('filterCat');
+const filterTagEl = document.getElementById('filterTag');
+
+function refreshAllSelects(){
+  renderOptions(fCat, categorias, '➕ Nova');
+  renderOptions(fTag, tagsList, '➕ Nova');
+  renderOptions(pendCat, categorias, '➕ Nova');
+  renderFilterOptions();
+}
+refreshAllSelects();
+
+function setupAddable(selEl, rowId, inputId, btnId, list, addLabel, storageKey){
+  const row = document.getElementById(rowId);
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if(!row || !input || !btn) return;
+  selEl.addEventListener('change', ()=>{
+    if(selEl.value==='__add__'){ row.style.display='flex'; input.value=''; input.focus(); }
+    else { row.style.display='none'; }
+  });
+  const confirmAdd = ()=>{
+    const val = input.value.trim();
+    if(!val) return;
+    if(!list.includes(val)) { 
+      list.push(val); 
+      localStorage.setItem(storageKey, JSON.stringify(list));
+    }
+    refreshAllSelects();
+    selEl.value = val;
+    row.style.display='none';
+  };
+  btn.onclick = confirmAdd;
+}
+setupAddable(fCat, 'catAddRow', 'catAddInput', 'catAddBtn', categorias, '➕ Nova', 'mgc_cats');
+setupAddable(fTag, 'tagAddRow', 'tagAddInput', 'tagAddBtn', tagsList, '➕ Nova', 'mgc_tags');
+
+function renderFilterOptions(){
+  const keepC = filterCatEl.value || 'todas';
+  const keepT = filterTagEl.value || 'todas';
+  filterCatEl.innerHTML = '<option value="todas">Todas categorias</option>' + categorias.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  filterTagEl.innerHTML = '<option value="todas">Todas tags</option>' + tagsList.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  filterCatEl.value = categorias.includes(keepC) ? keepC : 'todas';
+  filterTagEl.value = tagsList.includes(keepT) ? keepT : 'todas';
+}
+filterCatEl.onchange = ()=>{ filterCategoria = filterCatEl.value; render(); };
+filterTagEl.onchange = ()=>{ filterTag = filterTagEl.value; render(); };
+
+let editingManagerType = 'cat';
+function openCategoryManager(type){
+  editingManagerType = type;
+  document.getElementById('catManagerTitle').textContent = type === 'cat' ? 'Editar categorias' : 'Editar tags';
+  renderCategoryManagerList();
+  document.getElementById('catManagerModal').classList.add('open');
+}
+function renderCategoryManagerList(){
+  const list = editingManagerType === 'cat' ? categorias : tagsList;
+  const container = document.getElementById('catManagerList');
+  container.innerHTML = '';
+  list.forEach((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'mgc-manager-row';
+    row.innerHTML = `
+      <input type="text" class="mgc-manager-input" value="${escapeHtml(item)}" data-index="${index}">
+      <button class="mgc-del-btn" title="Excluir">✕</button>
+    `;
+    row.querySelector('.mgc-del-btn').onclick = () => {
+      list.splice(index, 1);
+      renderCategoryManagerList();
+    };
+    container.appendChild(row);
+  });
+}
+document.getElementById('editCatBtn').onclick = () => openCategoryManager('cat');
+document.getElementById('editTagBtn').onclick = () => openCategoryManager('tag');
+
+document.getElementById('addNewCatFieldBtn').onclick = () => {
+  const list = editingManagerType === 'cat' ? categorias : tagsList;
+  list.push('');
+  renderCategoryManagerList();
+  const inputs = document.querySelectorAll('.mgc-manager-input');
+  if(inputs.length) inputs[inputs.length - 1].focus();
+};
+
+document.getElementById('catManagerCancel').onclick = () => {
+  document.getElementById('catManagerModal').classList.remove('open');
+};
+
+document.getElementById('catManagerSave').onclick = () => {
+  const inputs = document.querySelectorAll('.mgc-manager-input');
+  const newList = [];
+  inputs.forEach(inp => {
+    const val = inp.value.trim();
+    if(val && !newList.includes(val)) newList.push(val);
+  });
+  if(editingManagerType === 'cat') {
+    categorias = newList.length ? newList : ["Outros"];
+    localStorage.setItem('mgc_cats', JSON.stringify(categorias));
+  } else {
+    tagsList = newList.length ? newList : ["Pix"];
+    localStorage.setItem('mgc_tags', JSON.stringify(tagsList));
+  }
+  refreshAllSelects();
+  document.getElementById('catManagerModal').classList.remove('open');
+};
+
+async function loadFromCloud(){
+  document.getElementById('loadingStatus').textContent = 'Sincronizando com a nuvem...';
+  try {
+    const res = await fetch(WEBHOOK_URL);
+    const data = await res.json();
+    
+    expenses = [];
+    obraMovs = [];
+    pendingBills = [];
+    piggyMovements = [];
+    
+    if(Array.isArray(data)){
+      data.forEach(item => {
+        if(item.tipo === 'despesa') expenses.push(item);
+        else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') obraMovs.push(item);
+        else if(item.tipo === 'pendente') pendingBills.push(item);
+        else if(item.tipo === 'porquinho') piggyMovements.push(item);
+      });
+    }
+    document.getElementById('loadingStatus').textContent = '';
+    render();
+  } catch(e) {
+    document.getElementById('loadingStatus').textContent = '⚠️ Modo Offline (Dados locais/Erro na nuvem)';
+    render();
+  }
+}
+
+async function sendToCloud(payload){
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) { console.error('Erro ao salvar na nuvem:', e); }
+}
+
+function render(){
+  const mk = monthKey(cur);
+  document.getElementById('monthLbl').textContent = cur.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  
+  const monthExp = expenses.filter(e=>e.data && e.data.slice(0,7)===mk
+    && (filterCategoria==='todas' || e.categoria===filterCategoria)
+    && (filterTag==='todas' || e.tag===filterTag));
+  
+  const total = monthExp.reduce((s,e)=>s+(Number(e.valor)||0),0);
+  document.getElementById('totalAmt').textContent = fmtMoney(total);
+  document.getElementById('totalCnt').textContent = monthExp.length + (monthExp.length===1?' comp.':' comp.');
+
+  const piggySaldo = piggyMovements.reduce((s,m)=>s+(m.extra==='add'? Number(m.valor): -Number(m.valor)), 0);
+  document.getElementById('piggyTotal').textContent = fmtMoney(piggySaldo);
+  renderPiggyHistory();
+
+  const totalObraRec = obraMovs.reduce((s,m)=>s+(m.tipo==='obraRec'?Number(m.valor):0), 0);
+  const totalObraGast = expenses.filter(e => e.extra === true || e.extra === 'true').reduce((s,e)=>s+(Number(e.valor)||0), 0) +
+                       obraMovs.reduce((s,m)=>s+(m.tipo==='obraGast'?Number(m.valor):0), 0);
+  const saldoObra = totalObraRec - totalObraGast;
+
+  document.getElementById('obraRec').textContent = fmtMoney(totalObraRec);
+  document.getElementById('obraGast').textContent = fmtMoney(totalObraGast);
+  document.getElementById('obraSald').textContent = fmtMoney(saldoObra);
+
+  renderObraList();
+  renderPendingList();
+
+  const byCat = {};
+  monthExp.forEach(e=>{ byCat[e.categoria]=(byCat[e.categoria]||0)+(Number(e.valor)||0); });
+  const bd = document.getElementById('breakdown');
+  bd.innerHTML='';
+  Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,val])=>{
+    const pct = total? Math.round(val/total*100):0;
+    const row=document.createElement('div'); row.className='brow';
+    row.innerHTML = `<span class="dot" style="background:${catColor(cat)}"></span>
+      <span class="name">${cat}</span>
+      <span class="bar"><i style="width:${pct}%;background:${catColor(cat)}"></i></span>
+      <span class="val mono">${fmtMoney(val)}</span>`;
+    bd.appendChild(row);
+  });
+
+  const list = document.getElementById('list');
+  list.innerHTML='';
+  if(!monthExp.length){
+    list.innerHTML = '<div class="empty">Nenhuma despesa registrada neste mês.</div>';
+    return;
+  }
+  monthExp.sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+  monthExp.forEach(e=>{
+    const d = document.createElement('div'); d.className='stub';
+    const dateDisp = formatDate(e.data);
+    const isObra = e.extra === true || e.extra === 'true';
+    
+    let thumbHtml = '<div class="ph">🧾</div>';
+    if(e.image) {
+      const imgSrc = e.image.startsWith('http') ? e.image : `data:image/jpeg;base64,${e.image}`;
+      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.src='https://placehold.co/40x40/FAF6EC/7A7264?text=🧾'">`;
+    }
+
+    d.innerHTML = `${thumbHtml}
+      <div class="mid" style="cursor:pointer;">
+        <div class="desc">${escapeHtml(e.descricao||'(sem descrição)')}</div>
+        <div class="meta">
+          <span class="chip" style="background:${catColor(e.categoria)}">${e.categoria||'Outros'}</span>
+          ${e.tag?`<span class="chip" style="background:${tagColor(e.tag)}">${escapeHtml(e.tag)}</span>`:''}
+          ${isObra?'<span class="chip obra">🏗️ Obra</span>':''}
+        </div>
+      </div>
+      <div class="valcol" style="cursor:pointer;">
+        <div class="val mono">${fmtMoney(e.valor)}</div>
+        <div class="date mono">${dateDisp}</div>
+      </div>
+      <button class="stub-del" type="button" data-delete-id="${e.id}" title="Excluir">✕</button>`;
+    
+    const imgEl = d.querySelector('img');
+    if(imgEl) {
+      imgEl.onclick = (ev) => {
+        ev.stopPropagation();
+        openImageViewer(e.image);
+      };
+    }
+
+    d.querySelector('.stub-del').onclick = (ev) => {
+      ev.stopPropagation();
+      deleteItem(e.id);
+    };
+
+    d.onclick = () => openDetailModal(e);
+    list.appendChild(d);
+  });
+}
+
+function openImageViewer(imageStr){
+  if(!imageStr) return;
+  const imgSrc = imageStr.startsWith('http') ? imageStr : `data:image/jpeg;base64,${imageStr}`;
+  document.getElementById('imageViewerImg').src = imgSrc;
+  document.getElementById('imageViewerBg').classList.add('open');
+}
+
+document.getElementById('imageViewerClose').onclick = () => {
+  document.getElementById('imageViewerBg').classList.remove('open');
+};
+document.getElementById('imageViewerBg').onclick = (e) => {
+  if(e.target === document.getElementById('imageViewerBg')) {
+    document.getElementById('imageViewerBg').classList.remove('open');
+  }
+};
+
+function openDetailModal(item){
+  currentDetailItem = item;
+  document.getElementById('detTitle').textContent = item.descricao || 'Detalhes do Lançamento';
+  const isObra = item.extra === true || item.extra === 'true';
+  document.getElementById('detContent').innerHTML = `
+    <div style="margin-bottom:6px;"><strong>Data:</strong> ${formatDate(item.data)}</div>
+    <div style="margin-bottom:6px;"><strong>Valor:</strong> ${fmtMoney(item.valor)}</div>
+    <div style="margin-bottom:6px;"><strong>Categoria:</strong> ${escapeHtml(item.categoria || 'Outros')}</div>
+    ${item.tag ? `<div style="margin-bottom:6px;"><strong>Tag:</strong> ${escapeHtml(item.tag)}</div>` : ''}
+    <div style="margin-bottom:6px;"><strong>Descontar da Obra:</strong> ${isObra ? 'Sim' : 'Não'}</div>
+  `;
+  const imgContainer = document.getElementById('detImageContainer');
+  if(item.image) {
+    const imgSrc = item.image.startsWith('http') ? item.image : `data:image/jpeg;base64,${item.image}`;
+    imgContainer.innerHTML = `
+      <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">Comprovante Anexado (Clique para ampliar):</div>
+      <img src="${imgSrc}" id="detModalImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--line);object-fit:contain;cursor:pointer;" alt="Comprovante">
+    `;
+    const detModalImg = document.getElementById('detModalImg');
+    if(detModalImg) {
+      detModalImg.onclick = () => openImageViewer(item.image);
+    }
+  } else {
+    imgContainer.innerHTML = '<div style="font-size:11px;color:var(--sub);">Nenhum comprovante anexado.</div>';
+  }
+  document.getElementById('detailSheetBg').classList.add('open');
+}
+
+document.getElementById('detClose').onclick = () => {
+  document.getElementById('detailSheetBg').classList.remove('open');
+};
+
+document.getElementById('detEdit').onclick = () => {
+  document.getElementById('detailSheetBg').classList.remove('open');
+  if(!currentDetailItem) return;
+  editingExpenseId = currentDetailItem.id;
+  document.getElementById('modalTitle').textContent = 'Editar Despesa MGC';
+  document.getElementById('fData').value = (currentDetailItem.data || '').split('T')[0];
+  document.getElementById('fValor').value = currentDetailItem.valor || '';
+  document.getElementById('fDesc').value = currentDetailItem.descricao || '';
+  fCat.value = currentDetailItem.categoria || categorias[0];
+  fTag.value = currentDetailItem.tag || tagsList[0];
+  document.getElementById('fDescontarObra').checked = currentDetailItem.extra === true || currentDetailItem.extra === 'true';
+  
+  pendingImageBase64 = null;
+  pendingImageName = currentDetailItem.imageName || '';
+  const prev = document.getElementById('preview');
+  if(currentDetailItem.image) {
+    prev.style.display = 'flex';
+    const imgSrc = currentDetailItem.image.startsWith('http') ? currentDetailItem.image : `data:image/jpeg;base64,${currentDetailItem.image}`;
+    prev.innerHTML = `<img src="${imgSrc}"><span>Comprovante existente</span>`;
+  } else {
+    prev.style.display = 'none';
+  }
+  document.getElementById('ocrNote').textContent = '';
+  document.getElementById('formError').textContent = '';
+  document.getElementById('sheetBg').classList.add('open');
+};
+
+function renderObraList(){
+  const l = document.getElementById('obraList');
+  l.innerHTML = '';
+  const allObraItems = [
+    ...obraMovs.map(m => ({ ...m, isDirect: true })),
+    ...expenses.filter(e => e.extra === true || e.extra === 'true').map(e => ({ ...e, isDirect: false, tipo: 'obraGast' }))
+  ];
+  if(!allObraItems.length){ l.innerHTML = '<div class="empty">Nenhum lançamento de Obra.</div>'; return; }
+  allObraItems.sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  allObraItems.forEach(item => {
+    const isRec = item.tipo === 'obraRec';
+    const d = document.createElement('div'); d.className = 'stub';
+    const dateDisp = formatDate(item.data);
+    d.innerHTML = `
+      <div class="ph" style="background:${isRec?'#E6F4EA':'#FCE8E6'}; color:${isRec?'#137333':'#C5221F'}">${isRec?'📥':'🏗️'}</div>
+      <div class="mid">
+        <div class="desc">${escapeHtml(item.descricao || 'Obra')}</div>
+        <div class="meta"><span class="chip" style="background:${isRec?'#137333':'#B36B00'}">${isRec?'Recebido':'Gasto'}</span></div>
+      </div>
+      <div class="valcol">
+        <div class="val mono" style="color:${isRec?'var(--cash)':'var(--ink)'}">${isRec?'+':'-'} ${fmtMoney(item.valor)}</div>
+        <div class="date mono">${dateDisp}</div>
+      </div>
+      ${item.isDirect ? `<button class="stub-del" data-delete-id="${item.id}" title="Excluir">✕</button>` : ''}
+    `;
+    if(item.isDirect) {
+      const delBtn = d.querySelector('.stub-del');
+      if(delBtn) {
+        delBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          deleteItem(item.id);
         };
+      }
+    }
+    l.appendChild(d);
+  });
+}
 
-        let editingDespesaId = null;
-        let selectedFileBase64 = null;
+function renderPendingList(){
+  const l = document.getElementById('pendList');
+  l.innerHTML = '';
+  if(!pendingBills.length){ l.innerHTML = '<div class="empty">Nenhuma conta pendente.</div>'; return; }
+  pendingBills.sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  pendingBills.forEach(p => {
+    const isPaid = p.pago === true;
+    const d = document.createElement('div'); 
+    d.className = 'stub' + (isPaid ? ' paid' : '');
+    const dateDisp = formatDate(p.data);
+    
+    d.innerHTML = `
+      <div class="ph" style="background:${isPaid?'#E6F4EA':'#FFF0DB'}; color:${isPaid?'#137333':'#B36B00'};">${isPaid?'✓':'⏳'}</div>
+      <div class="mid" style="cursor:pointer;">
+        <div class="desc">${escapeHtml(p.descricao)}</div>
+        <div class="meta">
+          <span class="chip" style="background:${catColor(p.categoria)}">${p.categoria}</span>
+          ${isPaid ? '<span class="chip paid-badge">Pago</span>' : ''}
+        </div>
+      </div>
+      <div class="valcol" style="cursor:pointer;">
+        <div class="val mono">${fmtMoney(p.valor)}</div>
+        <div class="date mono">Venc: ${dateDisp}</div>
+      </div>
+      ${!isPaid ? `<button style="background:var(--cash); color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:12px; font-weight:700; margin-left:6px; display:flex; align-items:center; justify-content:center;" class="pay-btn" title="Marcar como Pago e ir para Despesas">✓</button>` : ''}
+      <button class="stub-del" data-delete-id="${p.id}" title="Excluir">✕</button>
+    `;
+    
+    const payBtn = d.querySelector('.pay-btn');
+    if(payBtn) {
+      payBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        payPending(p.id);
+      };
+    }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initDateInputs();
-            updateSelectOptions();
-            fetchDataFromSheet();
-            renderApp();
-        });
+    d.querySelector('.stub-del').onclick = (ev) => {
+      ev.stopPropagation();
+      deleteItem(p.id);
+    };
 
-        function switchTab(tabId) {
-            state.activeTab = tabId;
-            ['despesas', 'obra', 'pendentes', 'porquinho'].forEach(t => {
-                const el = document.getElementById(`view-${t}`);
-                const btn = document.getElementById(`tab-${t}`);
-                if (t === tabId) {
-                    el.classList.remove('hidden');
-                    btn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm bg-white text-[#2D2A26]";
-                } else {
-                    el.classList.add('hidden');
-                    btn.className = "flex-1 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-[#7A7367] hover:text-[#2D2A26]";
-                }
-            });
-            renderApp();
+    d.querySelector('.mid').onclick = () => openPendingDetail(p.id);
+    d.querySelector('.valcol').onclick = () => openPendingDetail(p.id);
+
+    l.appendChild(d);
+  });
+}
+
+function openPendingDetail(id){
+  const p = pendingBills.find(x=>x.id===id);
+  if(!p) return;
+  editingPendingId = p.id;
+  document.getElementById('pendModalTitle').textContent = 'Editar Conta Pendente';
+  document.getElementById('pendData').value = (p.data || '').split('T')[0];
+  document.getElementById('pendValor').value = p.valor || '';
+  document.getElementById('pendDesc').value = p.descricao || '';
+  pendCat.value = p.categoria || categorias[0];
+  document.getElementById('pendSheetBg').classList.add('open');
+}
+
+async function deleteItem(id){
+  if(confirm("Excluir item?")){
+    expenses = expenses.filter(e=>e.id!==id);
+    obraMovs = obraMovs.filter(m=>m.id!==id);
+    pendingBills = pendingBills.filter(p=>p.id!==id);
+    piggyMovements = piggyMovements.filter(pi=>pi.id!==id);
+    render();
+    await sendToCloud({ action: 'delete', id: id });
+  }
+}
+
+async function payPending(id){
+  const p = pendingBills.find(x=>x.id===id);
+  if(!p || p.pago) return;
+  
+  p.pago = true;
+  await sendToCloud(p);
+
+  const doc = {
+    id: 'mgc_'+Date.now(), 
+    tipo: 'despesa', 
+    data: new Date().toISOString().slice(0,10), 
+    valor: p.valor,
+    descricao: p.descricao,
+    categoria: p.categoria,
+    tag: tagsList[0] || 'Pix',
+    extra: false,
+    image: ''
+  };
+  expenses.unshift(doc);
+  render();
+  await sendToCloud(doc);
+}
+
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+document.getElementById('prevM').onclick = ()=>{ cur.setMonth(cur.getMonth()-1); render(); };
+document.getElementById('nextM').onclick = ()=>{ cur.setMonth(cur.getMonth()+1); render(); };
+
+document.getElementById('fabBtn').onclick = () => {
+  if(activeTab === 'tabDespesas') {
+    editingExpenseId = null;
+    document.getElementById('modalTitle').textContent = 'Nova Despesa MGC';
+    pendingImageBase64 = null;
+    pendingImageName = null;
+    document.getElementById('preview').style.display='none';
+    document.getElementById('ocrNote').textContent='';
+    document.getElementById('fValor').value='';
+    document.getElementById('fDesc').value='';
+    document.getElementById('formError').textContent='';
+    document.getElementById('catAddRow').style.display='none';
+    document.getElementById('tagAddRow').style.display='none';
+    document.getElementById('fDescontarObra').checked=false;
+    document.getElementById('fData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('sheetBg').classList.add('open');
+  } else if(activeTab === 'tabObra') {
+    document.getElementById('obraRecData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('obraRecValor').value = '';
+    document.getElementById('obraRecDesc').value = '';
+    document.getElementById('obraRecSheet').classList.add('open');
+  } else if(activeTab === 'tabPendentes') {
+    editingPendingId = null;
+    document.getElementById('pendModalTitle').textContent = 'Nova Conta Pendente';
+    document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pendValor').value = '';
+    document.getElementById('pendDesc').value = '';
+    document.getElementById('pendSheetBg').classList.add('open');
+  } else if(activeTab === 'tabPorquinho') {
+    openPiggyModal('add');
+  }
+};
+
+const sheetBg = document.getElementById('sheetBg');
+document.getElementById('cancelAdd').onclick = ()=> sheetBg.classList.remove('open');
+document.getElementById('photoBtn').onclick = ()=> document.getElementById('fileInput').click();
+
+document.getElementById('fileInput').onchange = async (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  pendingImageName = file.name || 'comprovante.jpg';
+  const note = document.getElementById('ocrNote');
+  const prev = document.getElementById('preview');
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const fullDataUrl = e.target.result;
+    pendingImageBase64 = fullDataUrl.split(',')[1];
+    prev.style.display='flex';
+    prev.innerHTML = `<img src="${fullDataUrl}"><span>Comprovante anexado</span>`;
+    note.textContent='Lendo OCR (Valor, Data e Destino)...';
+    try {
+      const worker = await Tesseract.createWorker('por');
+      const ret = await worker.recognize(file);
+      const text = ret.data.text;
+      await worker.terminate();
+
+      const valMatch = text.match(/R\$\s?([\d.,]+)/i);
+      if(valMatch) {
+        document.getElementById('fValor').value = parseFloat(valMatch[1].replace('.','').replace(',','.'));
+      }
+
+      const lines = text.split('\n');
+      let foundName = '';
+      for(let i=0; i<lines.length; i++) {
+        let line = lines[i].trim();
+        if(/favorecido|nome|para:|destinatario/i.test(line)) {
+          const parts = line.split(/:|-/);
+          if(parts[1] && parts[1].trim().length > 2) {
+            foundName = parts[1].trim();
+            break;
+          } else if(lines[i+1] && lines[i+1].trim().length > 2) {
+            foundName = lines[i+1].trim();
+            break;
+          }
         }
-
-        function initDateInputs() {
-            const today = new Date().toISOString().split('T')[0];
-            const inpData = document.getElementById('inp-data');
-            const pendData = document.getElementById('pend-data');
-            if (inpData) inpData.value = today;
-            if (pendData) pendData.value = today;
-        }
-
-        function formatCurrencyInput(input) {
-            let value = input.value.replace(/\D/g, '');
-            value = (parseFloat(value) / 100).toFixed(2);
-            if (isNaN(value)) value = "0.00";
-            input.value = value.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
-
-        function parseCurrencyToNumber(str) {
-            if (!str) return 0;
-            if (typeof str === 'number') return str;
-            let clean = str.toString().replace(/\./g, '').replace(',', '.').replace('R$', '').trim();
-            return parseFloat(clean) || 0;
-        }
-
-        function formatMoney(val) {
-            if (state.privacyMode) return 'R$ •••••';
-            return 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function renderApp() {
-            updateMonthLabel();
-            updateSelectOptions();
-            renderDespesas();
-            renderObra();
-            renderPendentes();
-            renderPorquinho();
-        }
-
-        function updateMonthLabel() {
-            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            const m = months[state.currentDate.getMonth()];
-            const y = state.currentDate.getFullYear();
-            const lbl = document.getElementById('current-month-label');
-            if (lbl) lbl.innerText = `${m} de ${y}`;
-        }
-
-        function changeMonth(dir) {
-            state.currentDate.setMonth(state.currentDate.getMonth() + dir);
-            renderApp();
-        }
-
-        function updateSelectOptions() {
-            // Category & Tag selects
-            ['filter-category', 'inp-categoria', 'pend-categoria'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                const currentVal = el.value;
-                let html = id === 'filter-category' ? '<option value="">Todas categorias</option>' : '';
-                state.categorias.forEach(cat => {
-                    html += `<option value="${cat}">${cat}</option>`;
-                });
-                el.innerHTML = html;
-                el.value = currentVal;
-            });
-
-            const filterTag = document.getElementById('filter-tag');
-            if (filterTag) {
-                const cur = filterTag.value;
-                let html = '<option value="">Todas tags</option>';
-                state.tags.forEach(tag => {
-                    html += `<option value="${tag}">${tag}</option>`;
-                });
-                filterTag.innerHTML = html;
-                filterTag.value = cur;
+      }
+      
+      if(!foundName) {
+        for(let line of lines) {
+          let l = line.trim();
+          if(l.length > 3 && !/\$|data|cnpj|cpf|banco|agencia|conta|autenticacao|transacao|pix|mgc|c6|s\.a|ltda/i.test(l)) {
+            if(/[A-ZÀ-Ú]{3,}/.test(l)) {
+              foundName = l;
+              break;
             }
-
-            const inpTag = document.getElementById('inp-tag');
-            if (inpTag) {
-                const cur = inpTag.value;
-                let html = '';
-                state.tags.forEach(tag => {
-                    html += `<option value="${tag}">${tag}</option>`;
-                });
-                inpTag.innerHTML = html;
-                inpTag.value = cur;
-            }
+          }
         }
+      }
 
-        function renderDespesas() {
-            const container = document.getElementById('despesas-list-container');
-            const catFilter = document.getElementById('filter-category').value;
-            const tagFilter = document.getElementById('filter-tag').value;
+      if(foundName) {
+        document.getElementById('fDesc').value = foundName;
+      }
 
-            const targetMonth = state.currentDate.getMonth();
-            const targetYear = state.currentDate.getFullYear();
+      note.textContent = 'Leitura IA concluída com sucesso!';
+    } catch(err) { note.textContent = 'Imagem carregada com sucesso!'; }
+  };
+  reader.readAsDataURL(file);
+};
 
-            const filtered = state.despesas.filter(d => {
-                if (!d.data) return false;
-                const parts = d.data.split('T')[0].split('-');
-                const dYear = parseInt(parts[0]);
-                const dMonth = parseInt(parts[1]) - 1;
-                
-                if (dYear !== targetYear || dMonth !== targetMonth) return false;
-                if (catFilter && d.categoria !== catFilter) return false;
-                if (tagFilter && d.tag !== tagFilter) return false;
-                return true;
-            });
+document.addEventListener('paste', async (e) => {
+  if(!sheetBg.classList.contains('open')) return;
+  const items = e.clipboardData?.items;
+  if(!items) return;
+  let gotImage = false;
+  for(let item of items) {
+    if(item.type.indexOf('image') === 0) {
+      const file = item.getAsFile();
+      if(file) {
+        gotImage = true;
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = dataTransfer.files;
+        fileInput.onchange({ target: fileInput });
+      }
+    }
+  }
+  if(gotImage){
+    e.preventDefault();
+    const pt = document.getElementById('pasteTarget');
+    pt.value=''; pt.blur();
+  }
+});
 
-            let total = filtered.reduce((acc, item) => acc + parseCurrencyToNumber(item.valor), 0);
-            const totalValEl = document.getElementById('total-despesas-val');
-            if (totalValEl) totalValEl.innerText = formatMoney(total);
+document.getElementById('saveAdd').onclick = async ()=>{
+  const data = document.getElementById('fData').value;
+  const valor = parseFloat(document.getElementById('fValor').value.toString().replace(',', '.'));
+  if(!data || isNaN(valor)){ document.getElementById('formError').textContent='Informe data e valor.'; return; }
+  
+  let finalImage = '';
+  let finalImageName = '';
+  if(pendingImageBase64) {
+    finalImage = pendingImageBase64;
+    finalImageName = pendingImageName;
+  } else if(editingExpenseId) {
+    const oldItem = expenses.find(e => e.id === editingExpenseId);
+    if(oldItem) {
+      finalImage = oldItem.image || '';
+      finalImageName = oldItem.imageName || '';
+    }
+  }
 
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-white rounded-2xl border border-[#EFECE6] p-6">
-                        <span class="text-3xl mb-2 block">📭</span>
-                        <p class="text-xs font-semibold text-[#7A7367]">Nenhuma despesa registrada neste mês.</p>
-                    </div>
-                `;
-                return;
-            }
+  const selectedCat = fCat.value === '__add__' ? categorias[0] : fCat.value;
+  const selectedTag = fTag.value === '__add__' ? '' : fTag.value;
 
-            container.innerHTML = filtered.map(item => `
-                <div class="bg-white p-4 rounded-2xl border border-[#EFECE6] flex items-center justify-between custom-shadow">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#EFECE6] flex items-center justify-center text-lg">
-                            ${item.obra ? '🏗️' : '📄'}
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-[#2D2A26]">${item.descricao || 'Despesa sem descrição'}</h4>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-semibold px-2 py-0.5 bg-[#EFECE6] text-[#5C554B] rounded-md">${item.categoria || 'Geral'}</span>
-                                ${item.tag ? `<span class="text-[10px] font-semibold px-2 py-0.5 bg-[#FAF8F5] border border-[#EFECE6] text-[#7A7367] rounded-md">${item.tag}</span>` : ''}
-                                <span class="text-[10px] text-[#7A7367]">${formatDateStr(item.data)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm font-extrabold text-[#A34739]">${formatMoney(item.valor)}</span>
-                        <button onclick="deleteDespesa('${item.id}')" class="text-xs text-[#7A7367] hover:text-[#A34739] p-1">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+  const doc = {
+    id: editingExpenseId ? editingExpenseId : 'mgc_'+Date.now(), 
+    tipo: 'despesa', 
+    data: data.split('T')[0], 
+    valor,
+    descricao: document.getElementById('fDesc').value.trim() || 'Despesa',
+    categoria: selectedCat,
+    tag: selectedTag,
+    extra: document.getElementById('fDescontarObra').checked,
+    image: finalImage,
+    imageName: finalImageName
+  };
+  
+  if(editingExpenseId) {
+    const idx = expenses.findIndex(e => e.id === editingExpenseId);
+    if(idx !== -1) expenses[idx] = doc;
+    else expenses.unshift(doc);
+    editingExpenseId = null;
+  } else {
+    expenses.unshift(doc);
+  }
 
-        function renderObra() {
-            const container = document.getElementById('obra-list-container');
-            const obraItems = state.despesas.filter(d => d.obra);
-            let total = obraItems.reduce((acc, item) => acc + parseCurrencyToNumber(item.valor), 0);
-            
-            const totalEl = document.getElementById('total-obra-val');
-            if (totalEl) totalEl.innerText = formatMoney(total);
+  sheetBg.classList.remove('open');
+  render();
+  await sendToCloud(doc);
+};
 
-            if (obraItems.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-white rounded-2xl border border-[#EFECE6] p-6">
-                        <span class="text-3xl mb-2 block">🏗️</span>
-                        <p class="text-xs font-semibold text-[#7A7367]">Nenhum gasto vinculado à obra.</p>
-                    </div>
-                `;
-                return;
-            }
+const obraRecSheet = document.getElementById('obraRecSheet');
+document.getElementById('openObraRec').onclick = () => obraRecSheet.classList.add('open');
+document.getElementById('obraRecCancel').onclick = () => obraRecSheet.classList.remove('open');
+document.getElementById('obraRecSave').onclick = async () => {
+  const data = document.getElementById('obraRecData').value;
+  const valor = parseFloat(document.getElementById('obraRecValor').value.toString().replace(',', '.'));
+  if(!data || isNaN(valor)) return;
+  const doc = { id: 'obra_'+Date.now(), tipo: 'obraRec', data: data.split('T')[0], valor, descricao: document.getElementById('obraRecDesc').value.trim() || 'Pix Obra', extra: false, image: '' };
+  obraMovs.unshift(doc);
+  obraRecSheet.classList.remove('open');
+  render();
+  await sendToCloud(doc);
+};
 
-            container.innerHTML = obraItems.map(item => `
-                <div class="bg-white p-4 rounded-2xl border border-[#EFECE6] flex items-center justify-between custom-shadow">
-                    <div>
-                        <h4 class="text-xs font-bold text-[#2D2A26]">${item.descricao}</h4>
-                        <span class="text-[10px] text-[#7A7367]">${formatDateStr(item.data)} • ${item.categoria}</span>
-                    </div>
-                    <span class="text-sm font-extrabold text-[#2D2A26]">${formatMoney(item.valor)}</span>
-                </div>
-            `).join('');
-        }
+const pendSheetBg = document.getElementById('pendSheetBg');
+document.getElementById('openPendAdd').onclick = () => {
+  editingPendingId = null;
+  document.getElementById('pendModalTitle').textContent = 'Nova Conta Pendente';
+  document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pendValor').value = '';
+  document.getElementById('pendDesc').value = '';
+  pendSheetBg.classList.add('open');
+};
+document.getElementById('pendCancel').onclick = () => pendSheetBg.classList.remove('open');
+document.getElementById('pendSave').onclick = async () => {
+  const data = document.getElementById('pendData').value;
+  const valor = parseFloat(document.getElementById('pendValor').value.toString().replace(',', '.'));
+  const descricao = document.getElementById('pendDesc').value.trim();
+  if(!data || isNaN(valor) || !descricao) return;
 
-        function renderPendentes() {
-            const container = document.getElementById('pendentes-list-container');
-            if (state.pendentes.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-white rounded-2xl border border-[#EFECE6] p-6">
-                        <span class="text-3xl mb-2 block">⏳</span>
-                        <p class="text-xs font-semibold text-[#7A7367]">Nenhuma conta pendente ou lembrete.</p>
-                    </div>
-                `;
-                return;
-            }
+  const doc = {
+    id: editingPendingId ? editingPendingId : 'pend_'+Date.now(),
+    tipo: 'pendente',
+    data: data.split('T')[0],
+    valor,
+    descricao,
+    categoria: pendCat.value,
+    pago: editingPendingId ? (pendingBills.find(p=>p.id===editingPendingId)?.pago || false) : false,
+    extra: false,
+    image: ''
+  };
 
-            container.innerHTML = state.pendentes.map(item => `
-                <div class="bg-white p-4 rounded-2xl border border-[#EFECE6] flex items-center justify-between custom-shadow">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#EFECE6] flex items-center justify-center text-base">⏳</div>
-                        <div>
-                            <h4 class="text-xs font-bold text-[#2D2A26]">${item.nome}</h4>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] font-semibold px-2 py-0.5 bg-[#EFECE6] text-[#5C554B] rounded-md">${item.categoria}</span>
-                                <span class="text-[10px] text-[#7A7367]">Venc: ${formatDateStr(item.data)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-extrabold text-[#D97706]">${formatMoney(item.valor)}</span>
-                        <button onclick="payPendencia('${item.id}')" class="w-8 h-8 rounded-xl bg-[#3A5A40] text-white flex items-center justify-center text-xs font-bold hover:bg-[#344E41]" title="Pagar e mover para Despesas">✓</button>
-                        <button onclick="deletePendencia('${item.id}')" class="w-8 h-8 rounded-xl bg-[#EFECE6] text-[#7A7367] flex items-center justify-center text-xs hover:bg-[#E5E0D5]" title="Excluir">✕</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+  if(editingPendingId) {
+    const idx = pendingBills.findIndex(p => p.id === editingPendingId);
+    if(idx !== -1) {
+      pendingBills[idx] = doc;
+    } else {
+      pendingBills.unshift(doc);
+    }
+    editingPendingId = null;
+  } else {
+    pendingBills.unshift(doc);
+  }
 
-        function renderPorquinho() {
-            const container = document.getElementById('porquinho-list-container');
-            let total = state.porquinho.reduce((acc, item) => {
-                let v = parseCurrencyToNumber(item.valor);
-                return item.tipo === 'retirada' ? acc - v : acc + v;
-            }, 0);
+  pendSheetBg.classList.remove('open');
+  render();
+  await sendToCloud(doc);
+};
 
-            const totalEl = document.getElementById('total-porquinho-val');
-            if (totalEl) totalEl.innerText = formatMoney(total);
+const piggySheetBg = document.getElementById('piggySheetBg');
+function openPiggyModal(type){
+  piggyActionType = type;
+  document.getElementById('piggyModalTitle').textContent = type==='add' ? '🐷 Guardar' : '🐷 Retirar';
+  document.getElementById('pValor').value = '';
+  document.getElementById('pDesc').value = '';
+  piggySheetBg.classList.add('open');
+}
+document.getElementById('openPiggyAdd').onclick = ()=> openPiggyModal('add');
+document.getElementById('openPiggySub').onclick = ()=> openPiggyModal('sub');
+document.getElementById('piggyCancel').onclick = ()=> piggySheetBg.classList.remove('open');
+document.getElementById('piggySave').onclick = async ()=>{
+  const val = parseFloat(document.getElementById('pValor').value.toString().replace(',', '.'));
+  if(isNaN(val) || val <= 0) return;
+  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString().split('T')[0], extra: piggyActionType, image: '' };
+  piggyMovements.unshift(doc);
+  piggySheetBg.classList.remove('open');
+  render();
+  await sendToCloud(doc);
+};
+document.getElementById('togglePiggyHistory').onclick = ()=>{
+  const h = document.getElementById('piggyHistoryList');
+  h.style.display = h.style.display==='none' ? 'block' : 'none';
+};
+function renderPiggyHistory(){
+  const h = document.getElementById('piggyHistoryList');
+  if(!piggyMovements.length){ h.innerHTML = '<div style="font-size:10px;color:var(--sub);text-align:center;">Vazio.</div>'; return; }
+  h.innerHTML = piggyMovements.slice(0,10).map(m=>`
+    <div class="piggy-h-item ${m.extra==='add'?'plus':'minus'}">
+      <span>${m.extra==='add'?'+':'-'} ${fmtMoney(m.valor)} (${escapeHtml(m.descricao)})</span>
+      <span style="display:flex; align-items:center; gap:6px;">
+        ${formatDate(m.data)}
+        <button style="background:none; border:none; color:var(--stamp); cursor:pointer; font-size:11px;" onclick="deleteItem('${m.id}')">✕</button>
+      </span>
+    </div>
+  `).join('');
+}
 
-            if (state.porquinho.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-10 bg-white rounded-2xl border border-[#EFECE6] p-6">
-                        <span class="text-3xl mb-2 block">🐷</span>
-                        <p class="text-xs font-semibold text-[#7A7367]">Nenhuma movimentação no porquinho.</p>
-                    </div>
-                `;
-                return;
-            }
+document.getElementById('expMonth').onclick = ()=> doExport('mes');
+document.getElementById('expYear').onclick = ()=> doExport('ano');
 
-            container.innerHTML = state.porquinho.map(item => `
-                <div class="bg-white p-3.5 rounded-2xl border border-[#EFECE6] flex items-center justify-between text-xs">
-                    <div>
-                        <span class="font-bold text-[#2D2A26]">${item.descricao || (item.tipo === 'retirada' ? 'Resgate' : 'Depósito')}</span>
-                        <span class="block text-[10px] text-[#7A7367]">${formatDateStr(item.data)}</span>
-                    </div>
-                    <span class="font-extrabold ${item.tipo === 'retirada' ? 'text-[#A34739]' : 'text-[#3A5A40]'}">
-                        ${item.tipo === 'retirada' ? '-' : '+'} ${formatMoney(item.valor)}
-                    </span>
-                </div>
-            `).join('');
-        }
-
-        function formatDateStr(isoStr) {
-            if (!isoStr) return '';
-            const parts = isoStr.split('T')[0].split('-');
-            if (parts.length !== 3) return isoStr;
-            return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
-
-        function openDespesaModal() {
-            editingDespesaId = null;
-            document.getElementById('modal-despesa-title').innerText = 'Nova Despesa MGC';
-            document.getElementById('inp-descricao').value = '';
-            document.getElementById('inp-valor').value = '';
-            document.getElementById('inp-obra').checked = false;
-            selectedFileBase64 = null;
-            document.getElementById('comprovante-label').innerText = 'Anexar ou colar comprovante';
-            initDateInputs();
-            document.getElementById('modal-despesa').classList.remove('hidden');
-        }
-
-        function closeDespesaModal() {
-            document.getElementById('modal-despesa').classList.add('hidden');
-        }
-
-        function openPendenciaModal() {
-            document.getElementById('pend-nome').value = '';
-            document.getElementById('pend-valor').value = '';
-            initDateInputs();
-            document.getElementById('modal-pendencia').classList.remove('hidden');
-        }
-
-        function closePendenciaModal() {
-            document.getElementById('modal-pendencia').classList.add('hidden');
-        }
-
-        function openConfigModal() {
-            document.getElementById('cfg-webhook').value = state.webhookUrl;
-            document.getElementById('modal-config').classList.remove('hidden');
-        }
-
-        function closeConfigModal() {
-            document.getElementById('modal-config').classList.add('hidden');
-        }
-
-        function saveConfig() {
-            state.webhookUrl = document.getElementById('cfg-webhook').value.trim();
-            localStorage.setItem('mgc_webhook', state.webhookUrl);
-            closeConfigModal();
-            Swal.fire({ icon: 'success', title: 'Configurações salvas!', timer: 1500, showConfirmButton: false });
-        }
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(uploadEvent) {
-                selectedFileBase64 = uploadEvent.target.result;
-                document.getElementById('comprovante-label').innerText = `Arquivo anexado: ${file.name}`;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function saveDespesa() {
-            const data = document.getElementById('inp-data').value;
-            const valor = document.getElementById('inp-valor').value;
-            const descricao = document.getElementById('inp-descricao').value.trim();
-            const categoria = document.getElementById('inp-categoria').value;
-            const tag = document.getElementById('inp-tag').value;
-            const obra = document.getElementById('inp-obra').checked;
-
-            if (!valor || parseCurrencyToNumber(valor) <= 0) {
-                Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Informe um valor válido para a despesa.' });
-                return;
-            }
-            if (!descricao) {
-                Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Informe uma descrição ou destino.' });
-                return;
-            }
-
-            const newId = 'mgc_' + Math.random().toString(36).substr(2, 9);
-            const item = {
-                id: newId,
-                tipo: 'despesa',
-                data,
-                valor,
-                descricao,
-                categoria,
-                tag,
-                obra,
-                comprovante: selectedFileBase64 || ''
-            };
-
-            state.despesas.unshift(item);
-            localStorage.setItem('mgc_despesas', JSON.stringify(state.despesas));
-            
-            closeDespesaModal();
-            renderApp();
-            syncWithSheet(item);
-
-            Swal.fire({ icon: 'success', title: 'Despesa salva!', timer: 1200, showConfirmButton: false });
-        }
-
-        function deleteDespesa(id) {
-            Swal.fire({
-                title: 'Excluir despesa?',
-                text: 'Esta ação removerá o registro do sistema.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#A34739',
-                cancelButtonColor: '#7A7367',
-                confirmButtonText: 'Sim, excluir',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    state.despesas = state.despesas.filter(d => d.id !== id);
-                    localStorage.setItem('mgc_despesas', JSON.stringify(state.despesas));
-                    renderApp();
-                    syncDeleteWithSheet(id, 'despesa');
-                }
-            });
-        }
-
-        function savePendencia() {
-            const data = document.getElementById('pend-data').value;
-            const valor = document.getElementById('pend-valor').value;
-            const nome = document.getElementById('pend-nome').value.trim();
-            const categoria = document.getElementById('pend-categoria').value;
-
-            if (!valor || parseCurrencyToNumber(valor) <= 0 || !nome) {
-                Swal.fire({ icon: 'warning', title: 'Preencha todos os campos corretamente.' });
-                return;
-            }
-
-            const item = {
-                id: 'pend_' + Math.random().toString(36).substr(2, 9),
-                tipo: 'pendente',
-                data,
-                valor,
-                nome,
-                categoria
-            };
-
-            state.pendentes.unshift(item);
-            localStorage.setItem('mgc_pendentes', JSON.stringify(state.pendentes));
-            closePendenciaModal();
-            renderApp();
-            syncWithSheet(item);
-
-            Swal.fire({ icon: 'success', title: 'Pendência adicionada!', timer: 1200, showConfirmButton: false });
-        }
-
-        function payPendencia(id) {
-            const item = state.pendentes.find(p => p.id === id);
-            if (!item) return;
-
-            // Remove from pendentes
-            state.pendentes = state.pendentes.filter(p => p.id !== id);
-            localStorage.setItem('mgc_pendentes', JSON.stringify(state.pendentes));
-
-            // Add to despesas
-            const newDespesa = {
-                id: 'mgc_' + Math.random().toString(36).substr(2, 9),
-                tipo: 'despesa',
-                data: item.data,
-                valor: item.valor,
-                descricao: item.nome,
-                categoria: item.categoria,
-                tag: 'Pix',
-                obra: false,
-                comprovante: ''
-            };
-            state.despesas.unshift(newDespesa);
-            localStorage.setItem('mgc_despesas', JSON.stringify(state.despesas));
-
-            renderApp();
-            
-            // Sincroniza exclusão do ID pendente antigo e salvamento da nova despesa
-            syncDeleteWithSheet(id, 'pendente');
-            syncWithSheet(newDespesa);
-
-            Swal.fire({ icon: 'success', title: 'Conta paga e movida para despesas!', timer: 1500, showConfirmButton: false });
-        }
-
-        function deletePendencia(id) {
-            state.pendentes = state.pendentes.filter(p => p.id !== id);
-            localStorage.setItem('mgc_pendentes', JSON.stringify(state.pendentes));
-            renderApp();
-            syncDeleteWithSheet(id, 'pendente');
-        }
-
-        function openPorquinhoModal(tipo) {
-            Swal.fire({
-                title: tipo === 'depositar' ? 'Depositar no Porquinho' : 'Resgatar do Porquinho',
-                html: `
-                    <input type="text" id="swal-porq-val" placeholder="Valor R$ 0,00" oninput="formatCurrencyInput(this)" class="swal2-input">
-                    <input type="text" id="swal-porq-desc" placeholder="Motivo / Descrição" class="swal2-input">
-                `,
-                confirmButtonText: 'Confirmar',
-                confirmButtonColor: '#3A5A40',
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar',
-                preConfirm: () => {
-                    const valor = document.getElementById('swal-porq-val').value;
-                    const descricao = document.getElementById('swal-porq-desc').value;
-                    if (!valor || parseCurrencyToNumber(valor) <= 0) {
-                        Swal.showValidationMessage('Informe um valor válido');
-                    }
-                    return { tipo: tipo === 'depositar' ? 'deposito' : 'retirada', valor, descricao, data: new Date().toISOString().split('T')[0], id: 'porq_' + Math.random().toString(36).substr(2, 9) };
-                }
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    state.porquinho.unshift(res.value);
-                    localStorage.setItem('mgc_porquinho', JSON.stringify(state.porquinho));
-                    renderApp();
-                    syncWithSheet(res.value);
-                }
-            });
-        }
-
-        function togglePrivacy() {
-            state.privacyMode = !state.privacyMode;
-            document.getElementById('privacy-icon').innerText = state.privacyMode ? '🔒' : '👁️';
-            renderApp();
-        }
-
-        async function syncWithSheet(item) {
-            if (!state.webhookUrl) return;
-            const statusEl = document.getElementById('sync-status');
-            if (statusEl) {
-                statusEl.innerText = 'Sincronizando...';
-                statusEl.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800';
-            }
-            try {
-                await fetch(state.webhookUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'save', ...item })
-                });
-                if (statusEl) {
-                    statusEl.innerText = 'Sincronizado';
-                    statusEl.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800';
-                }
-            } catch (err) {
-                console.error(err);
-                if (statusEl) {
-                    statusEl.innerText = 'Erro sync';
-                    statusEl.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800';
-                }
-            }
-        }
-
-        async function syncDeleteWithSheet(id, tipo) {
-            if (!state.webhookUrl) return;
-            try {
-                await fetch(state.webhookUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'delete', id, tipo })
-                });
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function fetchDataFromSheet() {
-            if (!state.webhookUrl) return;
-            try {
-                const res = await fetch(state.webhookUrl + '?action=get');
-                const data = await res.json();
-                if (data && data.despesas) {
-                    state.despesas = data.despesas;
-                    state.pendentes = data.pendentes || [];
-                    state.porquinho = data.porquinho || [];
-                    localStorage.setItem('mgc_despesas', JSON.stringify(state.despesas));
-                    localStorage.setItem('mgc_pendentes', JSON.stringify(state.pendentes));
-                    localStorage.setItem('mgc_porquinho', JSON.stringify(state.porquinho));
-                    renderApp();
-                }
-            } catch (e) {
-                console.log('Modo offline ou CORS restrito no GET direto, operando com cache local.');
-            }
-        }
-
-        function testSync() {
-            if (!state.webhookUrl) {
-                Swal.fire({ icon: 'warning', title: 'Informe a URL do Webhook primeiro.' });
-                return;
-            }
-            Swal.fire({ icon: 'success', title: 'Conexão testada com sucesso!', text: 'O aplicativo está pronto para enviar dados.' });
-        }
-
-        function exportDataJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "mgc_backup_financeiro.json");
-            dlAnchorElem.click();
-        }
-
-        function openManageCategories() {
-            Swal.fire({
-                title: 'Gerenciar Categorias',
-                input: 'textarea',
-                inputValue: state.categorias.join(', '),
-                inputLabel: 'Separe as categorias por vírgula',
-                confirmButtonText: 'Salvar',
-                confirmButtonColor: '#3A5A40',
-                preConfirm: (val) => {
-                    if (val) {
-                        state.categorias = val.split(',').map(s => s.trim()).filter(Boolean);
-                        localStorage.setItem('mgc_categorias', JSON.stringify(state.categorias));
-                        updateSelectOptions();
-                    }
-                }
-            });
-        }
-
-        function openManageTags() {
-            Swal.fire({
-                title: 'Gerenciar Tags',
-                input: 'textarea',
-                inputValue: state.tags.join(', '),
-                inputLabel: 'Separe as tags por vírgula',
-                confirmButtonText: 'Salvar',
-                confirmButtonColor: '#3A5A40',
-                preConfirm: (val) => {
-                    if (val) {
-                        state.tags = val.split(',').map(s => s.trim()).filter(Boolean);
-                        localStorage.setItem('mgc_tags', JSON.stringify(state.tags));
-                        updateSelectOptions();
-                    }
-                }
-            });
-        }
-    </script>
+function doExport(scope){
+  const note = document.getElementById('expNote');
+  let rows; const targetYear = cur.getFullYear();
+  if(scope==='mes'){
+    const mk = monthKey(cur);
+    rows = expenses.filter(e=>e.data && e.data.slice(0,7)===mk);
+  } else {
+    rows = expenses.filter(e=>e.data && e.data.slice(0,4)===String(targetYear));
+  }
+  if(!rows.length){ 
+    note.textContent='Sem dados para exportar no período.'; 
+    return; 
+  }
+  
+  try {
+    const sheetData = [
+      ["Data", "Valor (R$)", "Descrição", "Categoria", "Tag", "Obra", "Comprovante"], 
+      ...rows.map(e=>[
+        formatDate(e.data), 
+        Number(e.valor)||0, 
+        e.descricao || '', 
+        e.categoria || '', 
+        e.tag || '', 
+        (e.extra === true || e.extra === 'true') ? 'Sim' : 'Não', 
+        e.image ? (e.image.startsWith('http') ? e.image : 'Anexado') : 'Não'
+      ])
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, scope === 'mes' ? "MGC_Mes" : "MGC_Ano");
+    
+    const fileName = scope === 'mes' 
+      ? `MGC_Despesas_${cur.getFullYear()}_${String(cur.getMonth()+1).padStart(2,'0')}.xlsx`
+      : `MGC_Despesas_${targetYear}.xlsx`;
+      
+    XLSX.writeFile(wb, fileName);
+    note.textContent = 'Planilha exportada com sucesso!';
+  } catch(err) {
+    console.error('Erro ao exportar:', err);
+    note.textContent = 'Erro ao gerar arquivo Excel.';
+  }
+}
+</script>
 </body>
 </html>
