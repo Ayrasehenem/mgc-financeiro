@@ -42,9 +42,15 @@ header{padding:8px 0 12px; display:flex; justify-content:center; align-items:cen
 .header-left{position:absolute; left:0; display:flex; gap:6px; z-index:2;}
 .privacy-btn{background:var(--card);border:1px solid var(--line);color:var(--sub);font-size:14px;cursor:pointer;padding:6px 8px;border-radius:8px;}
 
-.nav-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--line);padding:4px;border-radius:10px;}
-.nav-tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--sub);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .2s;}
+.nav-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--line);padding:4px;border-radius:10px; position:relative;}
+.nav-tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--sub);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .2s; position:relative;}
 .nav-tab.active{background:var(--card);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+
+/* Badge de alerta nas abas */
+.tab-badge{
+  position:absolute; top:2px; right:4px; background:var(--stamp); color:#fff;
+  font-size:9px; font-weight:800; padding:1px 4px; border-radius:10px; display:none;
+}
 
 .view-section{display:none;}
 .view-section.active{display:block;}
@@ -111,6 +117,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   display:flex;gap:10px;align-items:center;
 }
 .stub.paid{opacity:0.65; background: #F4F1EA;}
+.stub.alert-due{border-color: var(--stamp); background: #FDF3F2;}
 .stub img{width:38px;height:38px;object-fit:cover;border-radius:6px;flex:0 0 auto;border:1px solid var(--line);cursor:pointer;}
 .stub .ph{width:38px;height:38px;border-radius:6px;flex:0 0 auto;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub);}
 .stub .mid{flex:1;min-width:0;}
@@ -120,6 +127,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 .chip{padding:2px 6px;border-radius:10px;font-size:9px;color:#fff;font-weight:600;white-space:nowrap;}
 .chip.obra{background:#B36B00;}
 .chip.paid-badge{background:#33553B;}
+.chip.alert-badge{background:var(--stamp);}
 .stub .valcol{text-align:right;flex:0 0 auto;}
 .stub .val{font-weight:700;font-size:13px;}
 .stub .date{font-size:9px;color:var(--sub);margin-top:2px;}
@@ -148,7 +156,10 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   font-size:13px;font-family:inherit;box-sizing:border-box;
 }
 .row2{display:flex;gap:8px;margin-bottom:4px;}
-.row2 .field{flex:1;margin-bottom:0; min-width:0;}
+.row2 .field{margin-bottom:0; min-width:0;}
+.row2 .field:nth-child(1){flex: 1.3;} /* Mais espaço para a data no celular */
+.row2 .field:nth-child(2){flex: 1.0;}
+
 .photobtn{
   width:100%;padding:9px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);
   font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
@@ -225,7 +236,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   <div class="nav-tabs">
     <button class="nav-tab active" data-target="tabDespesas">🧾 Despesas</button>
     <button class="nav-tab" data-target="tabObra">🏗 Obra</button>
-    <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes</button>
+    <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes <span id="pendBadge" class="tab-badge">0</span></button>
     <button class="nav-tab" data-target="tabPorquinho">🐷 Porquinho</button>
   </div>
 
@@ -277,7 +288,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     <div style="display:flex; margin-bottom:12px;">
       <button class="btn primary" id="openPendAdd" style="flex:1;">+ Adicionar Conta Pendente</button>
     </div>
-    <h2 class="sec">Lembretes</h2>
+    <h2 class="sec">Lembretes & Contas a Vencer</h2>
     <div id="pendList"></div>
   </div>
 
@@ -306,7 +317,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     <h3 id="modalTitle">Nova Despesa MGC</h3>
     <input type="file" id="fileInput" accept="image/*" style="display:none">
     <button class="photobtn" id="photoBtn">📷 Anexar ou Ler comprovante</button>
-    <input type="text" id="pasteTarget" placeholder="📋 Toque aqui e segure para Colar o comprovante copiado" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--border);border-radius:8px;background:var(--bg-color);color:var(--text-muted);font-size:13px;text-align:center;">
+    <input type="text" id="pasteTarget" placeholder="📋 Toque aqui e segure para Colar o comprovante copiado" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--sub);font-size:13px;text-align:center;">
     <div class="preview" id="preview" style="display:none"></div>
     <div class="note" id="ocrNote"></div>
     <div class="row2" style="margin-top:10px;">
@@ -384,13 +395,22 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   </div>
 </div>
 
+<!-- Modal Conta Pendente Atualizado com Anexo e Colar -->
 <div class="sheet-bg" id="pendSheetBg">
   <div class="sheet">
     <h3 id="pendModalTitle">⏳ Conta Pendente</h3>
-    <div class="field"><label>Vencimento</label><input type="date" id="pendData"></div>
-    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="pendValor" placeholder="0,00"></div>
-    <div class="field"><label>Descrição</label><input type="text" id="pendDesc" placeholder="Ex: IPTU"></div>
+    <input type="file" id="pendFileInput" accept="image/*" style="display:none">
+    <button class="photobtn" id="pendPhotoBtn">📷 Anexar boleto/comprovante</button>
+    <input type="text" id="pendPasteTarget" placeholder="📋 Toque aqui e segure para Colar imagem" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--sub);font-size:13px;text-align:center;">
+    <div class="preview" id="pendPreview" style="display:none"></div>
+    
+    <div class="row2" style="margin-top:10px;">
+      <div class="field"><label>Vencimento</label><input type="date" id="pendData"></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="pendValor" placeholder="0,00"></div>
+    </div>
+    <div class="field"><label>Descrição</label><input type="text" id="pendDesc" placeholder="Ex: IPTU / Conta de Luz"></div>
     <div class="field"><label>Categoria</label><select id="pendCat"></select></div>
+    <div class="note" id="pendFormError" style="color:var(--stamp);"></div>
     <div class="btnrow">
       <button class="btn" id="pendCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
       <button class="btn primary" id="pendSave">Salvar</button>
@@ -411,8 +431,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-// URL do Webhook do Google Apps Script
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwa95Y4VI4Ej3jBWur-saiTy4EfaGfwwOE35l5Pp02xwHVhgeN33xFuiMY8HcC1EYh1Gg/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzDl9oWVPOKZ2bPBxF80QJbAocE68n76n2SKnfe9aIyNrVMNwZwVVrk89yuok3ynFdCAQ/exec';
 
 const SENHA_CORRETA = 'Marmores'; 
 const sessionLogged = localStorage.getItem('mgc_logged');
@@ -470,6 +489,10 @@ let piggyMovements = [];
 let cur = new Date(); cur.setDate(1);
 let pendingImageBase64 = null;
 let pendingImageName = null;
+
+let pendingBillImageBase64 = null;
+let pendingBillImageName = null;
+
 let filterCategoria = 'todas', filterTag = 'todas';
 let piggyActionType = 'add';
 let privacyMode = JSON.parse(localStorage.getItem('mgc_privacy') || 'false');
@@ -874,21 +897,48 @@ function renderObraList(){
 function renderPendingList(){
   const l = document.getElementById('pendList');
   l.innerHTML = '';
-  if(!pendingBills.length){ l.innerHTML = '<div class="empty">Nenhuma conta pendente.</div>'; return; }
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayTime = new Date(todayStr).getTime();
+  let alertCount = 0;
+
+  if(!pendingBills.length){ 
+    l.innerHTML = '<div class="empty">Nenhuma conta pendente.</div>'; 
+    document.getElementById('pendBadge').style.display = 'none';
+    return; 
+  }
+
   pendingBills.sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  
   pendingBills.forEach(p => {
     const isPaid = p.pago === true;
+    let isAlert = false;
+    
+    if(!isPaid && p.data) {
+      const dueTime = new Date(p.data.split('T')[0]).getTime();
+      const diffDays = Math.round((dueTime - todayTime) / (1000 * 60 * 60 * 24));
+      if(diffDays <= 3) { // Vencidas ou vence em até 3 dias
+        isAlert = true;
+        alertCount++;
+      }
+    }
+
     const d = document.createElement('div'); 
-    d.className = 'stub' + (isPaid ? ' paid' : '');
+    d.className = 'stub' + (isPaid ? ' paid' : (isAlert ? ' alert-due' : ''));
     const dateDisp = formatDate(p.data);
     
-    d.innerHTML = `
-      <div class="ph" style="background:${isPaid?'#E6F4EA':'#FFF0DB'}; color:${isPaid?'#137333':'#B36B00'};">${isPaid?'✓':'⏳'}</div>
+    let thumbHtml = '<div class="ph" style="background:'+(isPaid?'#E6F4EA':(isAlert?'#FCE8E6':'#FFF0DB'))+'; color:'+(isPaid?'#137333':(isAlert?'var(--stamp)':'#B36B00'))+';">'+(isPaid?'✓':(isAlert?'⚠️':'⏳'))+'</div>';
+    if(p.image) {
+      const imgSrc = p.image.startsWith('http') ? p.image : `data:image/jpeg;base64,${p.image}`;
+      thumbHtml = `<img src="${imgSrc}" alt="Comp" title="Clique para ampliar" onerror="this.src='https://placehold.co/40x40/FAF6EC/7A7264?text=⏳'">`;
+    }
+
+    d.innerHTML = `${thumbHtml}
       <div class="mid" style="cursor:pointer;">
         <div class="desc">${escapeHtml(p.descricao)}</div>
         <div class="meta">
           <span class="chip" style="background:${catColor(p.categoria)}">${p.categoria}</span>
-          ${isPaid ? '<span class="chip paid-badge">Pago</span>' : ''}
+          ${isPaid ? '<span class="chip paid-badge">Pago</span>' : (isAlert ? '<span class="chip alert-badge">Vence logo / Vencido</span>' : '')}
         </div>
       </div>
       <div class="valcol" style="cursor:pointer;">
@@ -899,6 +949,14 @@ function renderPendingList(){
       <button class="stub-del" data-delete-id="${p.id}" title="Excluir">✕</button>
     `;
     
+    const imgEl = d.querySelector('img');
+    if(imgEl) {
+      imgEl.onclick = (ev) => {
+        ev.stopPropagation();
+        openImageViewer(p.image);
+      };
+    }
+
     const payBtn = d.querySelector('.pay-btn');
     if(payBtn) {
       payBtn.onclick = (ev) => {
@@ -917,6 +975,14 @@ function renderPendingList(){
 
     l.appendChild(d);
   });
+
+  const badge = document.getElementById('pendBadge');
+  if(alertCount > 0) {
+    badge.textContent = alertCount;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function openPendingDetail(id){
@@ -928,6 +994,19 @@ function openPendingDetail(id){
   document.getElementById('pendValor').value = p.valor || '';
   document.getElementById('pendDesc').value = p.descricao || '';
   pendCat.value = p.categoria || categorias[0];
+  
+  pendingBillImageBase64 = null;
+  pendingBillImageName = p.imageName || '';
+  const prev = document.getElementById('pendPreview');
+  if(p.image) {
+    prev.style.display = 'flex';
+    const imgSrc = p.image.startsWith('http') ? p.image : `data:image/jpeg;base64,${p.image}`;
+    prev.innerHTML = `<img src="${imgSrc}"><span>Anexo existente</span>`;
+  } else {
+    prev.style.display = 'none';
+  }
+
+  document.getElementById('pendFormError').textContent = '';
   document.getElementById('pendSheetBg').classList.add('open');
 }
 
@@ -958,7 +1037,8 @@ async function payPending(id){
     categoria: p.categoria,
     tag: tagsList[0] || 'Pix',
     extra: false,
-    image: ''
+    image: p.image || '',
+    imageName: p.imageName || ''
   };
   expenses.unshift(doc);
   render();
@@ -994,9 +1074,13 @@ document.getElementById('fabBtn').onclick = () => {
   } else if(activeTab === 'tabPendentes') {
     editingPendingId = null;
     document.getElementById('pendModalTitle').textContent = 'Nova Conta Pendente';
+    pendingBillImageBase64 = null;
+    pendingBillImageName = null;
+    document.getElementById('pendPreview').style.display = 'none';
     document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
     document.getElementById('pendValor').value = '';
     document.getElementById('pendDesc').value = '';
+    document.getElementById('pendFormError').textContent = '';
     document.getElementById('pendSheetBg').classList.add('open');
   } else if(activeTab === 'tabPorquinho') {
     openPiggyModal('add');
@@ -1069,28 +1153,69 @@ document.getElementById('fileInput').onchange = async (ev)=>{
   reader.readAsDataURL(file);
 };
 
+// Manipulador de anexo e colagem para Contas Pendentes
+const pendSheetBg = document.getElementById('pendSheetBg');
+document.getElementById('pendPhotoBtn').onclick = () => document.getElementById('pendFileInput').click();
+
+document.getElementById('pendFileInput').onchange = (ev) => {
+  const file = ev.target.files[0];
+  if(!file) return;
+  pendingBillImageName = file.name || 'boleto.jpg';
+  const prev = document.getElementById('pendPreview');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const fullDataUrl = e.target.result;
+    pendingBillImageBase64 = fullDataUrl.split(',')[1];
+    prev.style.display = 'flex';
+    prev.innerHTML = `<img src="${fullDataUrl}"><span>Boleto/Comprovante anexado</span>`;
+  };
+  reader.readAsDataURL(file);
+};
+
 document.addEventListener('paste', async (e) => {
-  if(!sheetBg.classList.contains('open')) return;
   const items = e.clipboardData?.items;
   if(!items) return;
-  let gotImage = false;
-  for(let item of items) {
-    if(item.type.indexOf('image') === 0) {
-      const file = item.getAsFile();
-      if(file) {
-        gotImage = true;
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        const fileInput = document.getElementById('fileInput');
-        fileInput.files = dataTransfer.files;
-        fileInput.onchange({ target: fileInput });
+  
+  if(sheetBg.classList.contains('open')) {
+    let gotImage = false;
+    for(let item of items) {
+      if(item.type.indexOf('image') === 0) {
+        const file = item.getAsFile();
+        if(file) {
+          gotImage = true;
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          const fileInput = document.getElementById('fileInput');
+          fileInput.files = dataTransfer.files;
+          fileInput.onchange({ target: fileInput });
+        }
       }
     }
-  }
-  if(gotImage){
-    e.preventDefault();
-    const pt = document.getElementById('pasteTarget');
-    pt.value=''; pt.blur();
+    if(gotImage){
+      e.preventDefault();
+      const pt = document.getElementById('pasteTarget');
+      pt.value=''; pt.blur();
+    }
+  } else if(pendSheetBg.classList.contains('open')) {
+    let gotImage = false;
+    for(let item of items) {
+      if(item.type.indexOf('image') === 0) {
+        const file = item.getAsFile();
+        if(file) {
+          gotImage = true;
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          const fileInput = document.getElementById('pendFileInput');
+          fileInput.files = dataTransfer.files;
+          fileInput.onchange({ target: fileInput });
+        }
+      }
+    }
+    if(gotImage){
+      e.preventDefault();
+      const pt = document.getElementById('pendPasteTarget');
+      pt.value=''; pt.blur();
+    }
   }
 });
 
@@ -1156,13 +1281,16 @@ document.getElementById('obraRecSave').onclick = async () => {
   await sendToCloud(doc);
 };
 
-const pendSheetBg = document.getElementById('pendSheetBg');
 document.getElementById('openPendAdd').onclick = () => {
   editingPendingId = null;
   document.getElementById('pendModalTitle').textContent = 'Nova Conta Pendente';
+  pendingBillImageBase64 = null;
+  pendingBillImageName = null;
+  document.getElementById('pendPreview').style.display = 'none';
   document.getElementById('pendData').value = new Date().toISOString().slice(0,10);
   document.getElementById('pendValor').value = '';
   document.getElementById('pendDesc').value = '';
+  document.getElementById('pendFormError').textContent = '';
   pendSheetBg.classList.add('open');
 };
 document.getElementById('pendCancel').onclick = () => pendSheetBg.classList.remove('open');
@@ -1170,7 +1298,23 @@ document.getElementById('pendSave').onclick = async () => {
   const data = document.getElementById('pendData').value;
   const valor = parseFloat(document.getElementById('pendValor').value.toString().replace(',', '.'));
   const descricao = document.getElementById('pendDesc').value.trim();
-  if(!data || isNaN(valor) || !descricao) return;
+  if(!data || isNaN(valor) || !descricao) {
+    document.getElementById('pendFormError').textContent = 'Preencha vencimento, valor e descrição.';
+    return;
+  }
+
+  let finalImage = '';
+  let finalImageName = '';
+  if(pendingBillImageBase64) {
+    finalImage = pendingBillImageBase64;
+    finalImageName = pendingBillImageName;
+  } else if(editingPendingId) {
+    const oldItem = pendingBills.find(p => p.id === editingPendingId);
+    if(oldItem) {
+      finalImage = oldItem.image || '';
+      finalImageName = oldItem.imageName || '';
+    }
+  }
 
   const doc = {
     id: editingPendingId ? editingPendingId : 'pend_'+Date.now(),
@@ -1181,7 +1325,8 @@ document.getElementById('pendSave').onclick = async () => {
     categoria: pendCat.value,
     pago: editingPendingId ? (pendingBills.find(p=>p.id===editingPendingId)?.pago || false) : false,
     extra: false,
-    image: ''
+    image: finalImage,
+    imageName: finalImageName
   };
 
   if(editingPendingId) {
@@ -1215,7 +1360,7 @@ document.getElementById('piggyCancel').onclick = ()=> piggySheetBg.classList.rem
 document.getElementById('piggySave').onclick = async ()=>{
   const val = parseFloat(document.getElementById('pValor').value.toString().replace(',', '.'));
   if(isNaN(val) || val <= 0) return;
-  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString().split('T')[0], extra: piggyActionType, image: '' };
+  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString().slice(0,10), extra: piggyActionType, image: '' };
   piggyMovements.unshift(doc);
   piggySheetBg.classList.remove('open');
   render();
