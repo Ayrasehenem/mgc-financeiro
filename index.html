@@ -223,7 +223,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 
   <div class="nav-tabs">
     <button class="nav-tab active" data-target="tabDespesas">🧾 Despesas</button>
-    <button class="nav-tab" data-target="tabObra">🏗️ Obra</button>
+    <button class="nav-tab" data-target="tabObra">🏗️️ Obra</button>
     <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes</button>
     <button class="nav-tab" data-target="tabPorquinho">🐷 Porquinho</button>
   </div>
@@ -257,7 +257,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   <!-- ABA OBRA -->
   <div id="tabObra" class="view-section">
     <div class="obra-summary-box">
-      <div class="obra-summary-title">🏗️️ Resumo Financeiro da Obra</div>
+      <div class="obra-summary-title">🏗 Resumo Financeiro da Obra</div>
       <div class="obra-grid">
         <div class="obra-metric"><div class="m-lbl">Recebido</div><div class="m-val mono" id="obraRec">R$ 0,00</div></div>
         <div class="obra-metric"><div class="m-lbl">Gastos</div><div class="m-val mono" id="obraGast">R$ 0,00</div></div>
@@ -409,7 +409,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-// URL do Webhook do Google Apps Script
+// URL do Webhook do Google Apps Script atualizada
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzvN3dYw7nsenJxdJ4ooSRJmg7R8c_Gyv00eGlZq5PmF4AEidfRilg0ocTPa0e3sKWPjA/exec';
 
 // Sistema de Login por Senha com Fallback de Segurança
@@ -428,7 +428,6 @@ async function handlePasswordLogin() {
   
   errorEl.textContent = 'Verificando senha...';
   try {
-    // Tenta validar na nuvem adicionando cabeçalho de plain text para evitar erros severos de CORS
     const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: {
@@ -446,13 +445,12 @@ async function handlePasswordLogin() {
     }
   } catch(e) {
     console.error('Erro de conexão com o Apps Script:', e);
-    // FALLBACK LOCAL: Caso a nuvem falhe (CORS, link quebrado), 
-    // Permite usar a senha "1234" para entrar no app em modo local/offline.
-    if (senha === '123456') {
+    // FALLBACK LOCAL: Senha padrão 1234
+    if (senha === '1234') {
         errorEl.textContent = 'Acessando modo offline...';
         setTimeout(() => {
             document.getElementById('lockScreen').style.display = 'none';
-            loadFromCloud(); // A função loadFromCloud já trata falhas entrando em modo offline
+            loadFromCloud();
         }, 800);
     } else {
         errorEl.innerHTML = 'Erro na nuvem. <br><small>Dica: Use a senha <b>1234</b> para entrar offline.</small>';
@@ -507,7 +505,7 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
 });
 
 const privacyBtn = document.getElementById('privacyBtn');
-function updatePrivacyIcon(){ privacyBtn.textContent = privacyMode ? '🙈' : '👁️'; }
+function updatePrivacyIcon(){ privacyBtn.textContent = privacyMode ? '🙈' : '👁️️'; }
 privacyBtn.onclick = () => {
   privacyMode = !privacyMode;
   localStorage.setItem('mgc_privacy', JSON.stringify(privacyMode));
@@ -665,7 +663,7 @@ async function sendToCloud(payload){
     await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8' // Header seguro para apps script
+        'Content-Type': 'text/plain;charset=utf-8'
       },
       body: JSON.stringify(payload)
     });
