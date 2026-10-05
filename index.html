@@ -9,6 +9,7 @@
   --paper:#FAF6EC; --ink:#221E17; --sub:#7A7264; --line:#DCD3BE;
   --stamp:#AE3A2C; --cash:#33553B; --card:#FFFDF9; --piggy:#E68A00;
   --cat0:#AE3A2C;--cat1:#33553B;--cat2:#3D5A80;--cat3:#8B5E34;--cat4:#7A4C6E;--cat5:#5A6650;--cat6:#8A7A3F;
+  --tag0:#3D5A80;--tag1:#8B5E34;--tag2:#33553B;--tag3:#7A4C6E;--tag4:#AE3A2C;
 }
 body{
   margin:0; padding:12px; background:var(--paper); color:var(--ink);
@@ -137,33 +138,33 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 .sheet-bg.open{display:flex;}
 .sheet{
   background:var(--paper);width:100%;max-height:85vh;overflow-y:auto;border-radius:16px 16px 0 0;
-  padding:16px 16px 24px;
+  padding:16px 16px 24px; box-sizing:border-box;
 }
 .sheet h3{margin:0 0 12px;font-size:15px;font-weight:700;}
-.field{margin-bottom:12px;}
-.field label{display:block;font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:700;}
+.field{margin-bottom:10px;}
+.field label{display:block;font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;font-weight:700;}
 .field input,.field select{
-  width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);
+  width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);
   font-size:13px;font-family:inherit;box-sizing:border-box;
 }
-.row2{display:flex;gap:12px;margin-bottom:4px;}
-.row2 .field{flex:1;margin-bottom:0;}
+.row2{display:flex;gap:8px;margin-bottom:4px;}
+.row2 .field{flex:1;margin-bottom:0; min-width:0;}
 .photobtn{
-  width:100%;padding:10px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);
+  width:100%;padding:9px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);
   font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
 }
 .preview{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--sub);}
 .preview img{width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
 .note{font-size:10px;color:var(--sub);margin-top:4px;}
-.btnrow{display:flex;gap:8px;margin-top:14px;}
-.btn{flex:1;padding:11px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;}
+.btnrow{display:flex;gap:8px;margin-top:12px;}
+.btn{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;}
 .btn.primary{background:var(--cash);color:#fff;}
 .btn.piggy-save{background:var(--piggy);color:#fff;}
 .addrow{display:flex;gap:6px;margin-top:6px;}
 .addrow input{flex:1;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font-size:12px;}
 .addrow button{padding:7px 10px;border:none;border-radius:6px;background:var(--cash);color:#fff;font-size:12px;cursor:pointer;}
 .editlink{background:none;border:none;color:var(--sub);font-size:9px;text-decoration:underline;cursor:pointer;padding:0;margin-left:4px;text-transform:none;}
-.checkbox-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;margin-top:6px;}
+.checkbox-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;margin-top:4px;}
 .checkbox-label input{width:16px;height:16px;accent-color:var(--cash);cursor:pointer;}
 .piggy-history{margin-top:10px; border-top:1px dashed var(--line); padding-top:6px; max-height:100px; overflow-y:auto;}
 .piggy-h-item{display:flex; justify-content:space-between; font-size:10px; color:var(--sub); padding:2px 0;}
@@ -203,7 +204,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 <body>
 
 <!-- Tela de Login por Senha -->
-<div id="lockScreen">
+<div id="lockScreen" style="display:none;">
   <h2>🔒 MGC Financeiro</h2>
   <p>Digite sua senha de acesso para continuar:</p>
   <input type="password" id="lockPasswordInput" class="lock-input" placeholder="Senha secreta" />
@@ -223,7 +224,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 
   <div class="nav-tabs">
     <button class="nav-tab active" data-target="tabDespesas">🧾 Despesas</button>
-    <button class="nav-tab" data-target="tabObra">🏗️️ Obra</button>
+    <button class="nav-tab" data-target="tabObra">🏗 Obra</button>
     <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes</button>
     <button class="nav-tab" data-target="tabPorquinho">🐷 Porquinho</button>
   </div>
@@ -325,7 +326,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
         <div class="addrow" id="tagAddRow" style="display:none;"><input type="text" id="tagAddInput" placeholder="Nova"><button type="button" id="tagAddBtn">OK</button></div>
       </div>
     </div>
-    <div class="field" style="margin-top:12px;">
+    <div class="field" style="margin-top:8px;">
       <label class="checkbox-label"><input type="checkbox" id="fDescontarObra"> 🏗️ Descontar da Obra</label>
     </div>
     <div class="note" id="formError" style="color:var(--stamp);"></div>
@@ -410,16 +411,23 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-// URL do Webhook do Google Apps Script atualizada
+// URL do Webhook do Google Apps Script
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwa95Y4VI4Ej3jBWur-saiTy4EfaGfwwOE35l5Pp02xwHVhgeN33xFuiMY8HcC1EYh1Gg/exec';
 
-// Sistema de Login por Senha com Fallback de Segurança
+const SENHA_CORRETA = 'Marmores'; 
+const sessionLogged = localStorage.getItem('mgc_logged');
+
+if(sessionLogged === 'true') {
+  document.getElementById('lockScreen').style.display = 'none';
+  loadFromCloud();
+} else {
+  document.getElementById('lockScreen').style.display = 'flex';
+}
+
 document.getElementById('lockSubmitBtn').onclick = handlePasswordLogin;
 document.getElementById('lockPasswordInput').onkeydown = (e) => {
   if(e.key === 'Enter') handlePasswordLogin();
 };
-
-const SENHA_CORRETA = '1234'; // troque aqui quando quiser mudar a senha
 
 function handlePasswordLogin() {
   const senha = document.getElementById('lockPasswordInput').value.trim();
@@ -429,6 +437,7 @@ function handlePasswordLogin() {
     return;
   }
   if(senha === SENHA_CORRETA) {
+    localStorage.setItem('mgc_logged', 'true');
     document.getElementById('lockScreen').style.display = 'none';
     loadFromCloud();
   } else {
@@ -443,6 +452,13 @@ function hashColor(name){
   return `var(--${CATCOL[Math.abs(h)%CATCOL.length]})`;
 }
 const catColor = hashColor;
+
+const TAGCOL = ["tag0","tag1","tag2","tag3","tag4"];
+function tagColor(name){
+  let h=0; const s=name||'Tag';
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+  return `var(--${TAGCOL[Math.abs(h)%TAGCOL.length]})`;
+}
 
 let categorias = JSON.parse(localStorage.getItem('mgc_cats') || '["Alimentação","Transporte","Moradia","Saúde","Lazer","Compras","Contas","Outros"]');
 let tagsList = JSON.parse(localStorage.getItem('mgc_tags') || '["Pix","Cartão","Dinheiro"]');
@@ -467,7 +483,8 @@ const monthKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
 
 function formatDate(dateStr) {
   if(!dateStr) return '';
-  const parts = dateStr.split('T')[0].split('-');
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-');
   if(parts.length !== 3) return dateStr;
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
@@ -483,7 +500,7 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
 });
 
 const privacyBtn = document.getElementById('privacyBtn');
-function updatePrivacyIcon(){ privacyBtn.textContent = privacyMode ? '🙈' : '👁️️'; }
+function updatePrivacyIcon(){ privacyBtn.textContent = privacyMode ? '🙈' : '👁'; }
 privacyBtn.onclick = () => {
   privacyMode = !privacyMode;
   localStorage.setItem('mgc_privacy', JSON.stringify(privacyMode));
@@ -713,7 +730,7 @@ function render(){
         <div class="desc">${escapeHtml(e.descricao||'(sem descrição)')}</div>
         <div class="meta">
           <span class="chip" style="background:${catColor(e.categoria)}">${e.categoria||'Outros'}</span>
-          ${e.tag?`<span>· ${escapeHtml(e.tag)}</span>`:''}
+          ${e.tag?`<span class="chip" style="background:${tagColor(e.tag)}">${escapeHtml(e.tag)}</span>`:''}
           ${isObra?'<span class="chip obra">🏗️ Obra</span>':''}
         </div>
       </div>
@@ -794,7 +811,7 @@ document.getElementById('detEdit').onclick = () => {
   if(!currentDetailItem) return;
   editingExpenseId = currentDetailItem.id;
   document.getElementById('modalTitle').textContent = 'Editar Despesa MGC';
-  document.getElementById('fData').value = currentDetailItem.data || '';
+  document.getElementById('fData').value = (currentDetailItem.data || '').split('T')[0];
   document.getElementById('fValor').value = currentDetailItem.valor || '';
   document.getElementById('fDesc').value = currentDetailItem.descricao || '';
   fCat.value = currentDetailItem.categoria || categorias[0];
@@ -907,7 +924,7 @@ function openPendingDetail(id){
   if(!p) return;
   editingPendingId = p.id;
   document.getElementById('pendModalTitle').textContent = 'Editar Conta Pendente';
-  document.getElementById('pendData').value = p.data || '';
+  document.getElementById('pendData').value = (p.data || '').split('T')[0];
   document.getElementById('pendValor').value = p.valor || '';
   document.getElementById('pendDesc').value = p.descricao || '';
   pendCat.value = p.categoria || categorias[0];
@@ -940,7 +957,7 @@ async function payPending(id){
     descricao: p.descricao,
     categoria: p.categoria,
     tag: tagsList[0] || 'Pix',
-    extra: true,
+    extra: false,
     image: ''
   };
   expenses.unshift(doc);
@@ -1016,23 +1033,32 @@ document.getElementById('fileInput').onchange = async (ev)=>{
 
       const lines = text.split('\n');
       let foundName = '';
-      for(let line of lines) {
+      for(let i=0; i<lines.length; i++) {
+        let line = lines[i].trim();
         if(/favorecido|nome|para:|destinatario/i.test(line)) {
           const parts = line.split(/:|-/);
           if(parts[1] && parts[1].trim().length > 2) {
             foundName = parts[1].trim();
             break;
-          }
-        }
-      }
-      if(!foundName) {
-        for(let line of lines) {
-          if(line.length > 5 && !/\$|data|cnpj|cpf|banco|agencia|conta/i.test(line)) {
-            foundName = line.trim();
+          } else if(lines[i+1] && lines[i+1].trim().length > 2) {
+            foundName = lines[i+1].trim();
             break;
           }
         }
       }
+      
+      if(!foundName) {
+        for(let line of lines) {
+          let l = line.trim();
+          if(l.length > 3 && !/\$|data|cnpj|cpf|banco|agencia|conta|autenticacao|transacao|pix|mgc|c6|s\.a|ltda/i.test(l)) {
+            if(/[A-ZÀ-Ú]{3,}/.test(l)) {
+              foundName = l;
+              break;
+            }
+          }
+        }
+      }
+
       if(foundName) {
         document.getElementById('fDesc').value = foundName;
       }
@@ -1092,7 +1118,7 @@ document.getElementById('saveAdd').onclick = async ()=>{
   const doc = {
     id: editingExpenseId ? editingExpenseId : 'mgc_'+Date.now(), 
     tipo: 'despesa', 
-    data, 
+    data: data.split('T')[0], 
     valor,
     descricao: document.getElementById('fDesc').value.trim() || 'Despesa',
     categoria: selectedCat,
@@ -1106,6 +1132,7 @@ document.getElementById('saveAdd').onclick = async ()=>{
     const idx = expenses.findIndex(e => e.id === editingExpenseId);
     if(idx !== -1) expenses[idx] = doc;
     else expenses.unshift(doc);
+    editingExpenseId = null;
   } else {
     expenses.unshift(doc);
   }
@@ -1122,7 +1149,7 @@ document.getElementById('obraRecSave').onclick = async () => {
   const data = document.getElementById('obraRecData').value;
   const valor = parseFloat(document.getElementById('obraRecValor').value.toString().replace(',', '.'));
   if(!data || isNaN(valor)) return;
-  const doc = { id: 'obra_'+Date.now(), tipo: 'obraRec', data, valor, descricao: document.getElementById('obraRecDesc').value.trim() || 'Pix Obra', extra: false, image: '' };
+  const doc = { id: 'obra_'+Date.now(), tipo: 'obraRec', data: data.split('T')[0], valor, descricao: document.getElementById('obraRecDesc').value.trim() || 'Pix Obra', extra: false, image: '' };
   obraMovs.unshift(doc);
   obraRecSheet.classList.remove('open');
   render();
@@ -1148,11 +1175,11 @@ document.getElementById('pendSave').onclick = async () => {
   const doc = {
     id: editingPendingId ? editingPendingId : 'pend_'+Date.now(),
     tipo: 'pendente',
-    data,
+    data: data.split('T')[0],
     valor,
     descricao,
     categoria: pendCat.value,
-    pago: false,
+    pago: editingPendingId ? (pendingBills.find(p=>p.id===editingPendingId)?.pago || false) : false,
     extra: false,
     image: ''
   };
@@ -1160,11 +1187,11 @@ document.getElementById('pendSave').onclick = async () => {
   if(editingPendingId) {
     const idx = pendingBills.findIndex(p => p.id === editingPendingId);
     if(idx !== -1) {
-      doc.pago = pendingBills[idx].pago;
       pendingBills[idx] = doc;
     } else {
       pendingBills.unshift(doc);
     }
+    editingPendingId = null;
   } else {
     pendingBills.unshift(doc);
   }
@@ -1188,7 +1215,7 @@ document.getElementById('piggyCancel').onclick = ()=> piggySheetBg.classList.rem
 document.getElementById('piggySave').onclick = async ()=>{
   const val = parseFloat(document.getElementById('pValor').value.toString().replace(',', '.'));
   if(isNaN(val) || val <= 0) return;
-  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString(), extra: piggyActionType, image: '' };
+  const doc = { id: 'p_'+Date.now(), tipo: 'porquinho', valor: val, descricao: document.getElementById('pDesc').value.trim() || 'Porquinho', data: new Date().toISOString().split('T')[0], extra: piggyActionType, image: '' };
   piggyMovements.unshift(doc);
   piggySheetBg.classList.remove('open');
   render();
@@ -1233,7 +1260,7 @@ function doExport(scope){
     const sheetData = [
       ["Data", "Valor (R$)", "Descrição", "Categoria", "Tag", "Obra", "Comprovante"], 
       ...rows.map(e=>[
-        e.data, 
+        formatDate(e.data), 
         Number(e.valor)||0, 
         e.descricao || '', 
         e.categoria || '', 
