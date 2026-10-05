@@ -305,6 +305,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     <h3 id="modalTitle">Nova Despesa MGC</h3>
     <input type="file" id="fileInput" accept="image/*" style="display:none">
     <button class="photobtn" id="photoBtn">📷 Anexar ou Ler comprovante</button>
+    <input type="text" id="pasteTarget" placeholder="📋 Toque aqui e segure para Colar o comprovante copiado" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--border);border-radius:8px;background:var(--bg-color);color:var(--text-muted);font-size:13px;text-align:center;">
     <div class="preview" id="preview" style="display:none"></div>
     <div class="note" id="ocrNote"></div>
     <div class="row2" style="margin-top:10px;">
@@ -1046,10 +1047,12 @@ document.addEventListener('paste', async (e) => {
   if(!sheetBg.classList.contains('open')) return;
   const items = e.clipboardData?.items;
   if(!items) return;
+  let gotImage = false;
   for(let item of items) {
     if(item.type.indexOf('image') === 0) {
       const file = item.getAsFile();
       if(file) {
+        gotImage = true;
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         const fileInput = document.getElementById('fileInput');
@@ -1057,6 +1060,11 @@ document.addEventListener('paste', async (e) => {
         fileInput.onchange({ target: fileInput });
       }
     }
+  }
+  if(gotImage){
+    e.preventDefault();
+    const pt = document.getElementById('pasteTarget');
+    pt.value=''; pt.blur();
   }
 });
 
