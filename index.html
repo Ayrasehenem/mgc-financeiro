@@ -8,7 +8,7 @@
 :root{
   --paper:#FAF6EC; --ink:#221E17; --sub:#7A7264; --line:#DCD3BE;
   --stamp:#AE3A2C; --cash:#33553B; --card:#FFFDF9; --piggy:#E68A00;
-  --cat0:#2A7F86;--cat1:#33553B;--cat2:#3D5A80;--cat3:#8B5E34;--cat4:#7A4C6E;--cat5:#5A6650;--cat6:#8A7A3F;
+  --cat0:#2F8F8B;--cat1:#B5628A;--cat2:#6B7C93;--cat3:#9A7550;--cat4:#4A8DB5;--cat5:#6E9460;--cat6:#B58A3C;--cat7:#8272B0;
   --tag0:#D9730D;--tag1:#A67C00;--tag2:#2E8B57;--tag3:#2F6FB5;--tag4:#4B4FA8;--tag5:#8A4FB0;
 }
 body{
@@ -158,10 +158,14 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);
   font-size:13px;font-family:inherit;box-sizing:border-box;
 }
-.row2{display:flex;gap:8px;margin-bottom:4px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
 .row2 .field{margin-bottom:0; min-width:0;}
-.row2 .field:nth-child(1){flex: 1.3;}
-.row2 .field:nth-child(2){flex: 1.0;}
+.row2 .field input,.row2 .field select{min-width:0;}
+.sheet input[type=date]{-webkit-appearance:none;appearance:none;display:block;height:42px;text-align:left;font-size:14px;line-height:1.2;}
+.sheet input[type=date]::-webkit-date-and-time-value{text-align:left;}
+.sheet input[type=number]{height:42px;font-size:16px;font-weight:700;}
+.sheet select{height:42px;}
+.sheet input[type=text]#pasteTarget,.sheet input[type=text]#pendPasteTarget{box-sizing:border-box;}
 
 .photobtn{
   width:100%;padding:9px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);
@@ -318,14 +322,14 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
     <h3 id="modalTitle">Nova Despesa MGC</h3>
-    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none">
     <button class="photobtn" id="photoBtn">📷 Anexar ou Ler comprovante</button>
     <input type="text" id="pasteTarget" placeholder="📋 Toque aqui e segure para Colar o comprovante copiado" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--sub);font-size:13px;text-align:center;">
     <div class="preview" id="preview" style="display:none"></div>
     <div class="note" id="ocrNote"></div>
     <div class="row2" style="margin-top:10px;">
       <div class="field"><label>Data</label><input type="date" id="fData"></div>
-      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="fValor" placeholder="0,00"></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" inputmode="decimal" id="fValor" placeholder="0,00"></div>
     </div>
     <div class="field"><label>Descrição / Nome do Destino</label><input type="text" id="fDesc" placeholder="Ex: Pix para João da Silva"></div>
     <div class="row2">
@@ -425,14 +429,14 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 <div class="sheet-bg" id="pendSheetBg">
   <div class="sheet">
     <h3 id="pendModalTitle">⏳ Conta Pendente</h3>
-    <input type="file" id="pendFileInput" accept="image/*" style="display:none">
+    <input type="file" id="pendFileInput" accept="image/*,application/pdf" style="display:none">
     <button class="photobtn" id="pendPhotoBtn">📷 Anexar boleto/comprovante</button>
     <input type="text" id="pendPasteTarget" placeholder="📋 Toque aqui e segure para Colar imagem" style="width:100%;margin-top:8px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--card);color:var(--sub);font-size:13px;text-align:center;">
     <div class="preview" id="pendPreview" style="display:none"></div>
     
     <div class="row2" style="margin-top:10px;">
       <div class="field"><label>Vencimento</label><input type="date" id="pendData"></div>
-      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="pendValor" placeholder="0,00"></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" inputmode="decimal" id="pendValor" placeholder="0,00"></div>
     </div>
     <div class="field"><label>Descrição</label><input type="text" id="pendDesc" placeholder="Ex: IPTU / Conta de Luz"></div>
     <div class="field"><label>Categoria</label><select id="pendCat"></select></div>
@@ -457,7 +461,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwBbEeIa1R28P0k01ufbhdh_rmCR9Skhih6ydcpBWGFgNCxUfHefEn5UKCdKWhdHvZPKA/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzjuTFWp6DLUY411A779HZnr7cVynt6zNNaztgaWh2g2QOXWFUH5iPD6VSIMlDJY_HYiw/exec';
 
 const SENHA_CORRETA = 'Marmores'; 
 const sessionLogged = localStorage.getItem('mgc_logged');
@@ -490,13 +494,17 @@ function handlePasswordLogin() {
   }
 }
 
-const CATCOL = ["cat0","cat1","cat2","cat3","cat4","cat5","cat6"];
-function hashColor(name){
-  let h=0; const s=name||'Outros';
-  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
-  return `var(--${CATCOL[Math.abs(h)%CATCOL.length]})`;
+// Categorias: tons suaves e terrosos (as tags ficam com as cores vivas do arco-íris)
+const CATCOL = ["cat0","cat1","cat2","cat3","cat4","cat5","cat6","cat7"];
+function catColor(name){
+  let idx = (typeof categorias !== 'undefined') ? categorias.indexOf(name) : -1;
+  if(idx < 0){
+    let h=0; const s=name||'Outros';
+    for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+    idx = Math.abs(h);
+  }
+  return `var(--${CATCOL[idx % CATCOL.length]})`;
 }
-const catColor = hashColor;
 
 // Tags em cores de arco-íris (sem vermelho, reservado para alertas), na ordem da lista
 const TAGCOL = ["tag0","tag1","tag2","tag3","tag4","tag5"];
@@ -518,6 +526,8 @@ let pendingBills = [];
 let piggyMovements = [];
 
 let cur = new Date(); cur.setDate(1);
+let pendingImageMime = 'image/jpeg';
+let pendingBillImageMime = 'image/jpeg';
 let pendingImageBase64 = null;
 let pendingImageName = null;
 
@@ -535,14 +545,17 @@ let currentDetailItem = null;
 const fmtMoney = n => privacyMode ? 'R$ •••••' : (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 function driveId(s){ const m = String(s).match(/[?&]id=([\w-]+)/) || String(s).match(/\/d\/([\w-]+)/); return m ? m[1] : null; }
+const PDF_ICON = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="10" fill="#FAF6EC"/><text x="40" y="55" font-size="40" text-anchor="middle">📄</text></svg>');
+function isPdfStr(s){ s = String(s||''); return s.startsWith('JVBERi') || /[?&]pdf=1/.test(s); }
 function imgUrl(s, size){
   if(!s) return '';
+  if(String(s).startsWith('JVBERi')) return PDF_ICON; // PDF recém-anexado, ainda local
   if(String(s).startsWith('http')){ const id = driveId(s); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size||400}` : s; }
   return `data:image/jpeg;base64,${s}`;
 }
-function buildImageName(data, desc, prefix){
+function buildImageName(data, desc, prefix, ext){
   const slug = String(desc||'comprovante').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50) || 'comprovante';
-  return (prefix ? prefix+'_' : '') + (data||todayStr()) + '_' + slug + '.jpg';
+  return (prefix ? prefix+'_' : '') + (data||todayStr()) + '_' + slug + '.' + (ext || 'jpg');
 }
 function compressImage(dataUrl, maxSide=1600, quality=0.82){
   return new Promise(resolve=>{
@@ -880,6 +893,12 @@ function render(){
 
 function openImageViewer(imageStr){
   if(!imageStr) return;
+  if(isPdfStr(imageStr)){
+    const id = driveId(imageStr);
+    if(id) window.open('https://drive.google.com/file/d/' + id + '/view', '_blank');
+    else alert('O PDF ainda está sendo enviado. Tente de novo em instantes.');
+    return;
+  }
   const imgSrc = imgUrl(imageStr, 1600);
   document.getElementById('imageViewerImg').src = imgSrc;
   document.getElementById('imageViewerBg').classList.add('open');
@@ -909,7 +928,7 @@ function openDetailModal(item){
   if(item.image) {
     const imgSrc = imgUrl(item.image, 800);
     imgContainer.innerHTML = `
-      <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">Comprovante Anexado (Clique para ampliar):</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">${isPdfStr(item.image) ? 'PDF anexado (clique para abrir)' : 'Comprovante Anexado (Clique para ampliar)'}:</div>
       <img src="${imgSrc}" id="detModalImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--line);object-fit:contain;cursor:pointer;" alt="Comprovante">
     `;
     const detModalImg = document.getElementById('detModalImg');
@@ -1198,6 +1217,20 @@ document.getElementById('fileInput').onchange = async (ev) => {
   const prev = document.getElementById('preview');
   const reader = new FileReader();
 
+  if(file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')){
+    if(file.size > 12*1024*1024){ note.textContent = 'PDF muito grande (máx. 12 MB).'; return; }
+    reader.onload = function(e){
+      pendingImageBase64 = e.target.result.split(',')[1];
+      pendingImageMime = 'application/pdf';
+      document.getElementById('formError').textContent = '';
+      prev.style.display = 'flex';
+      prev.innerHTML = `<img src="${PDF_ICON}"><span>📄 ${escapeHtml(file.name)}</span>`;
+      note.textContent = 'PDF anexado. A leitura automática não funciona em PDF: preencha os dados.';
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+  pendingImageMime = 'image/jpeg';
   reader.onload = async function(e) {
     document.getElementById('formError').textContent = '';
     const fullDataUrl = await compressImage(e.target.result);
@@ -1287,6 +1320,18 @@ document.getElementById('pendFileInput').onchange = (ev) => {
   pendingBillImageName = file.name || 'boleto.jpg';
   const prev = document.getElementById('pendPreview');
   const reader = new FileReader();
+  if(file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')){
+    if(file.size > 12*1024*1024){ alert('PDF muito grande (máx. 12 MB).'); return; }
+    reader.onload = function(e){
+      pendingBillImageBase64 = e.target.result.split(',')[1];
+      pendingBillImageMime = 'application/pdf';
+      prev.style.display = 'flex';
+      prev.innerHTML = `<img src="${PDF_ICON}"><span>📄 ${escapeHtml(file.name)}</span>`;
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+  pendingBillImageMime = 'image/jpeg';
   reader.onload = async function(e) {
     const fullDataUrl = await compressImage(e.target.result);
     pendingBillImageBase64 = fullDataUrl.split(',')[1];
@@ -1303,7 +1348,7 @@ document.addEventListener('paste', async (e) => {
   if(sheetBg.classList.contains('open')) {
     let gotImage = false;
     for(let item of items) {
-      if(item.type.indexOf('image') === 0) {
+      if(item.type.indexOf('image') === 0 || item.type === 'application/pdf') {
         const file = item.getAsFile();
         if(file) {
           gotImage = true;
@@ -1323,7 +1368,7 @@ document.addEventListener('paste', async (e) => {
   } else if(pendSheetBg.classList.contains('open')) {
     let gotImage = false;
     for(let item of items) {
-      if(item.type.indexOf('image') === 0) {
+      if(item.type.indexOf('image') === 0 || item.type === 'application/pdf') {
         const file = item.getAsFile();
         if(file) {
           gotImage = true;
@@ -1361,6 +1406,7 @@ document.getElementById('saveAdd').onclick = async ()=>{
     }
   }
 
+  const isPdf = pendingImageBase64 ? pendingImageMime === 'application/pdf' : isPdfStr(finalImage);
   const selectedCat = fCat.value === '__add__' ? categorias[0] : fCat.value;
   const selectedTag = fTag.value === '__add__' ? '' : fTag.value;
 
@@ -1374,7 +1420,8 @@ document.getElementById('saveAdd').onclick = async ()=>{
     tag: selectedTag,
     extra: document.getElementById('fDescontarObra').checked,
     image: finalImage,
-    imageName: finalImage ? buildImageName(data, document.getElementById('fDesc').value.trim() || 'Despesa') : ''
+    imageName: finalImage ? buildImageName(data, document.getElementById('fDesc').value.trim() || 'Despesa', '', isPdf ? 'pdf' : 'jpg') : '',
+    imageMime: pendingImageBase64 ? pendingImageMime : ''
   };
   
   if(editingExpenseId) {
@@ -1441,6 +1488,7 @@ document.getElementById('pendSave').onclick = async () => {
     }
   }
 
+  const isPdfBill = pendingBillImageBase64 ? pendingBillImageMime === 'application/pdf' : isPdfStr(finalImage);
   const doc = {
     id: editingPendingId ? editingPendingId : 'pend_'+Date.now(),
     tipo: 'pendente',
@@ -1451,7 +1499,8 @@ document.getElementById('pendSave').onclick = async () => {
     pago: editingPendingId ? (pendingBills.find(p=>p.id===editingPendingId)?.pago || false) : false,
     extra: false,
     image: finalImage,
-    imageName: finalImage ? buildImageName(data, descricao, 'Venc') : ''
+    imageName: finalImage ? buildImageName(data, descricao, 'Venc', isPdfBill ? 'pdf' : 'jpg') : '',
+    imageMime: pendingBillImageBase64 ? pendingBillImageMime : ''
   };
 
   if(editingPendingId) {
