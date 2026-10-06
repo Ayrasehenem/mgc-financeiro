@@ -8,8 +8,8 @@
 :root{
   --paper:#FAF6EC; --ink:#221E17; --sub:#7A7264; --line:#DCD3BE;
   --stamp:#AE3A2C; --cash:#33553B; --card:#FFFDF9; --piggy:#E68A00;
-  --cat0:#AE3A2C;--cat1:#33553B;--cat2:#3D5A80;--cat3:#8B5E34;--cat4:#7A4C6E;--cat5:#5A6650;--cat6:#8A7A3F;
-  --tag0:#3D5A80;--tag1:#8B5E34;--tag2:#33553B;--tag3:#7A4C6E;--tag4:#AE3A2C;
+  --cat0:#2A7F86;--cat1:#33553B;--cat2:#3D5A80;--cat3:#8B5E34;--cat4:#7A4C6E;--cat5:#5A6650;--cat6:#8A7A3F;
+  --tag0:#D9730D;--tag1:#A67C00;--tag2:#2E8B57;--tag3:#2F6FB5;--tag4:#4B4FA8;--tag5:#8A4FB0;
 }
 body{
   margin:0; padding:12px; background:var(--paper); color:var(--ink);
@@ -102,6 +102,9 @@ header{padding:8px 0 12px; display:flex; justify-content:center; align-items:cen
   flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);
   color:var(--ink);font-size:11px;font-weight:600;cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;
 }
+.seg{display:flex;gap:6px;}
+.seg button{flex:1;padding:10px 6px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;}
+.seg button.on{background:var(--cash);border-color:var(--cash);color:#fff;}
 .breakdown{margin-bottom:16px;}
 .brow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;}
 .brow .dot{width:7px;height:7px;border-radius:2px;flex:0 0 auto;}
@@ -211,6 +214,8 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -257,10 +262,8 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
       <div class="cnt" id="totalCnt">0 comprovantes</div>
     </div>
     <div class="exportrow">
-      <button class="expbtn" id="expMonth">📊 Exportar mês</button>
-      <button class="expbtn" id="expYear">📅 Exportar ano</button>
+      <button class="expbtn" id="openExport">📤 Exportar</button>
     </div>
-    <div class="note" id="expNote" style="text-align:center; margin-bottom:10px;"></div>
     <div id="breakdown" class="breakdown"></div>
     <h2 class="sec">Lançamentos</h2>
     <div id="list"></div>
@@ -382,6 +385,29 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   </div>
 </div>
 
+<div class="sheet-bg" id="exportSheet">
+  <div class="sheet">
+    <h3>📤 Exportar despesas</h3>
+    <div class="field"><label>Formato</label>
+      <div class="seg" id="expFormat">
+        <button type="button" data-v="pdf" class="on">📄 PDF</button>
+        <button type="button" data-v="xlsx">📊 Excel</button>
+      </div>
+    </div>
+    <div class="field"><label>Período</label>
+      <div class="seg" id="expScope">
+        <button type="button" data-v="mes" class="on" id="expScopeMes">Mês</button>
+        <button type="button" data-v="ano" id="expScopeAno">Ano</button>
+      </div>
+    </div>
+    <div class="note" id="expNote" style="text-align:center;min-height:14px;"></div>
+    <div class="btnrow">
+      <button class="btn" id="expCancel" style="background:var(--line);color:var(--ink);">Fechar</button>
+      <button class="btn primary" id="expGo">Exportar</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="obraRecSheet">
   <div class="sheet">
     <h3>🏗️ Recebimento da Obra</h3>
@@ -472,11 +498,16 @@ function hashColor(name){
 }
 const catColor = hashColor;
 
-const TAGCOL = ["tag0","tag1","tag2","tag3","tag4"];
+// Tags em cores de arco-íris (sem vermelho, reservado para alertas), na ordem da lista
+const TAGCOL = ["tag0","tag1","tag2","tag3","tag4","tag5"];
 function tagColor(name){
-  let h=0; const s=name||'Tag';
-  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
-  return `var(--${TAGCOL[Math.abs(h)%TAGCOL.length]})`;
+  let idx = (typeof tagsList !== 'undefined') ? tagsList.indexOf(name) : -1;
+  if(idx < 0){
+    let h=0; const s=name||'Tag';
+    for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
+    idx = Math.abs(h);
+  }
+  return `var(--${TAGCOL[idx % TAGCOL.length]})`;
 }
 
 let categorias = JSON.parse(localStorage.getItem('mgc_cats') || '["Alimentação","Transporte","Moradia","Saúde","Lazer","Compras","Contas","Outros"]');
@@ -1479,50 +1510,208 @@ function renderPiggyHistory(){
   `).join('');
 }
 
-document.getElementById('expMonth').onclick = ()=> doExport('mes');
-document.getElementById('expYear').onclick = ()=> doExport('ano');
+const exportSheet = document.getElementById('exportSheet');
+document.getElementById('openExport').onclick = () => {
+  const mn = cur.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('expScopeMes').textContent = mn.charAt(0).toUpperCase() + mn.slice(1);
+  document.getElementById('expScopeAno').textContent = 'Ano ' + cur.getFullYear();
+  document.getElementById('expNote').textContent = '';
+  exportSheet.classList.add('open');
+};
+document.getElementById('expCancel').onclick = () => exportSheet.classList.remove('open');
+exportSheet.addEventListener('click', (e) => { if(e.target === exportSheet) exportSheet.classList.remove('open'); });
+document.querySelectorAll('#expFormat button, #expScope button').forEach(b => {
+  b.onclick = () => {
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  };
+});
+document.getElementById('expGo').onclick = () => {
+  const fmt = document.querySelector('#expFormat button.on').dataset.v;
+  const scope = document.querySelector('#expScope button.on').dataset.v;
+  if(fmt === 'pdf') doExportPdf(scope); else doExport(scope);
+};
+
+function exportRows(scope){
+  if(scope==='mes'){
+    const mk = monthKey(cur);
+    return expenses.filter(e=>e.data && e.data.slice(0,7)===mk);
+  }
+  return expenses.filter(e=>e.data && e.data.slice(0,4)===String(cur.getFullYear()));
+}
+const isObraItem = e => e.extra === true || e.extra === 'true';
+function fmtBRL(n){
+  const v = (Number(n)||0).toFixed(2).split('.');
+  return 'R$ ' + v[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.') + ',' + v[1];
+}
 
 function doExport(scope){
   const note = document.getElementById('expNote');
-  let rows; const targetYear = cur.getFullYear();
-  if(scope==='mes'){
-    const mk = monthKey(cur);
-    rows = expenses.filter(e=>e.data && e.data.slice(0,7)===mk);
-  } else {
-    rows = expenses.filter(e=>e.data && e.data.slice(0,4)===String(targetYear));
-  }
-  if(!rows.length){ 
-    note.textContent='Sem dados para exportar no período.'; 
-    return; 
-  }
-  
+  const targetYear = cur.getFullYear();
+  const rows = exportRows(scope).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  if(!rows.length){ note.textContent='Sem dados para exportar no período.'; return; }
   try {
+    const total = rows.reduce((s,e)=>s+(Number(e.valor)||0),0);
     const sheetData = [
-      ["Data", "Valor (R$)", "Descrição", "Categoria", "Tag", "Obra", "Comprovante"], 
+      ["Data", "Valor (R$)", "Descrição", "Categoria", "Tag", "Obra"],
       ...rows.map(e=>[
-        formatDate(e.data), 
-        Number(e.valor)||0, 
-        e.descricao || '', 
-        e.categoria || '', 
-        e.tag || '', 
-        (e.extra === true || e.extra === 'true') ? 'Sim' : 'Não', 
-        e.image ? (e.image.startsWith('http') ? (driveId(e.image) ? 'https://drive.google.com/file/d/'+driveId(e.image)+'/view' : e.image) : 'Anexado') : 'Não'
-      ])
+        formatDate(e.data), Number(e.valor)||0, e.descricao || '', e.categoria || '', e.tag || '',
+        isObraItem(e) ? 'Sim' : 'Não'
+      ]),
+      ["TOTAL", total, "", "", "", ""]
     ];
-    
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    for(let r=1; r<sheetData.length; r++){
+      const c = ws[XLSX.utils.encode_cell({r, c:1})];
+      if(c) c.z = '"R$" #,##0.00';
+    }
+    ws['!cols'] = [{wch:12},{wch:14},{wch:34},{wch:16},{wch:14},{wch:8}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, scope === 'mes' ? "MGC_Mes" : "MGC_Ano");
-    
     const fileName = scope === 'mes' 
       ? `MGC_Despesas_${cur.getFullYear()}_${String(cur.getMonth()+1).padStart(2,'0')}.xlsx`
       : `MGC_Despesas_${targetYear}.xlsx`;
-      
     XLSX.writeFile(wb, fileName);
     note.textContent = 'Planilha exportada com sucesso!';
   } catch(err) {
     console.error('Erro ao exportar:', err);
     note.textContent = 'Erro ao gerar arquivo Excel.';
+  }
+}
+
+function cssHexToRgb(v){
+  const m = String(v).match(/var\((--[\w-]+)\)/);
+  const hex = (m ? getComputedStyle(document.documentElement).getPropertyValue(m[1]) : v).trim().replace('#','');
+  if(hex.length !== 6) return [90,90,90];
+  return [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16)];
+}
+
+function doExportPdf(scope){
+  const note = document.getElementById('expNote');
+  const rows = exportRows(scope).sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  if(!rows.length){ note.textContent='Sem dados para exportar no período.'; return; }
+  if(!window.jspdf || !window.jspdf.jsPDF){ note.textContent='Biblioteca de PDF não carregou. Verifique a conexão e tente de novo.'; return; }
+  note.textContent = 'Gerando PDF...';
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'a4' });
+    const W = 210, H = 297, M = 12;
+    const PAPER=[250,246,236], CARD=[255,253,249], INK=[34,30,23], SUB=[122,114,100], LINE=[220,211,190], GREEN=[51,85,59];
+
+    const total = rows.reduce((s,e)=>s+(Number(e.valor)||0),0);
+    const byCat = {};
+    rows.forEach(e=>{ const c=e.categoria||'Outros'; byCat[c]=(byCat[c]||0)+(Number(e.valor)||0); });
+    const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    const catsShown = cats.slice(0,8);
+
+    const monthName = cur.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const title = scope==='mes' ? monthName.charAt(0).toUpperCase()+monthName.slice(1) : 'Ano de '+cur.getFullYear();
+
+    const headerBottom = 30 + 24 + 8 + catsShown.length*6.5 + 6;
+
+    const paintBg = () => { doc.setFillColor(...PAPER); doc.rect(0,0,W,H,'F'); };
+
+    const drawHeader = () => {
+      doc.setTextColor(...INK); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+      doc.text('MGC', W/2, 16, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...SUB);
+      doc.text('Despesas · ' + title, W/2, 22.5, {align:'center'});
+
+      doc.setFillColor(...CARD); doc.setDrawColor(...LINE); doc.setLineWidth(0.3);
+      doc.roundedRect(M, 28, W-2*M, 24, 3, 3, 'FD');
+      doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...SUB);
+      doc.text('TOTAL DE DESPESAS', W/2, 35, {align:'center'});
+      doc.setFontSize(20); doc.setTextColor(...INK);
+      doc.text(fmtBRL(total), W/2, 44, {align:'center'});
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...SUB);
+      doc.text(rows.length + (rows.length===1 ? ' comprovante' : ' comprovantes'), W/2, 49.5, {align:'center'});
+
+      let y = 60;
+      const barX = 74, barW = 78;
+      catsShown.forEach(([name,val])=>{
+        const col = cssHexToRgb(catColor(name));
+        doc.setFillColor(...col); doc.circle(M+2, y-1.2, 1.3, 'F');
+        doc.setFontSize(9); doc.setTextColor(...INK); doc.text(name, M+6, y);
+        doc.setFillColor(...LINE); doc.roundedRect(barX, y-2.4, barW, 2, 1, 1, 'F');
+        const pct = total ? val/total : 0;
+        doc.setFillColor(...col); doc.roundedRect(barX, y-2.4, Math.max(1.5, barW*pct), 2, 1, 1, 'F');
+        doc.setTextColor(...SUB); doc.text(fmtBRL(val), W-M, y, {align:'right'});
+        y += 6.5;
+      });
+    };
+
+    const body = rows.map(e => [
+      formatDate(e.data),
+      (e.descricao || '(sem descrição)') + (isObraItem(e) ? '  (obra)' : ''),
+      e.categoria || 'Outros',
+      e.tag || '',
+      fmtBRL(e.valor)
+    ]);
+
+    doc.autoTable({
+      head: [['Data','Descrição','Categoria','Tag','Valor']],
+      body,
+      foot: [['', 'Total', '', '', fmtBRL(total)]],
+      startY: headerBottom,
+      margin: { top: 14, left: M, right: M, bottom: 16 },
+      theme: 'grid',
+      styles: { font:'helvetica', fontSize:9, cellPadding:2.6, textColor:INK, lineColor:LINE, lineWidth:0.15, valign:'middle' },
+      headStyles: { fillColor:GREEN, textColor:[255,255,255], fontStyle:'bold', lineColor:GREEN },
+      bodyStyles: { fillColor:CARD },
+      alternateRowStyles: { fillColor:PAPER },
+      footStyles: { fillColor:[236,229,210], textColor:INK, fontStyle:'bold' },
+      columnStyles: { 0:{cellWidth:22}, 2:{cellWidth:30}, 3:{cellWidth:28}, 4:{cellWidth:28, halign:'right', fontStyle:'bold'} },
+      willDrawPage: () => { paintBg(); },
+      didDrawPage: () => { if(doc.internal.getCurrentPageInfo().pageNumber === 1) drawHeader(); },
+      didParseCell: (d) => {
+        if(d.section==='body' && (d.column.index===2 || d.column.index===3)){
+          // o texto padrão é removido; a pílula colorida é desenhada em didDrawCell
+          d.cell.text = [''];
+        }
+        if(d.section==='head' && d.column.index===4) d.cell.styles.halign = 'right';
+        if(d.section==='foot' && d.column.index===4) d.cell.styles.halign = 'right';
+      },
+      didDrawCell: (d) => {
+        if(d.section!=='body' || (d.column.index!==2 && d.column.index!==3)) return;
+        const label = String(body[d.row.index][d.column.index] || '');
+        if(!label) return;
+        const col = d.column.index===2 ? cssHexToRgb(catColor(label)) : cssHexToRgb(tagColor(label));
+        doc.setFont('helvetica','bold'); doc.setFontSize(7);
+        const maxW = d.cell.width - 3;
+        let txt = label;
+        while(doc.getTextWidth(txt) > maxW - 4 && txt.length > 3) txt = txt.slice(0,-2);
+        if(txt !== label) txt += '…';
+        const tw = doc.getTextWidth(txt) + 4, ph = 4.8;
+        const x = d.cell.x + 1.5, y = d.cell.y + (d.cell.height - ph)/2;
+        doc.setFillColor(...col); doc.roundedRect(x, y, tw, ph, 2.4, 2.4, 'F');
+        doc.setTextColor(255,255,255); doc.text(txt, x + 2, y + ph/2 + 0.9);
+        doc.setFont('helvetica','normal');
+      }
+    });
+
+    const pages = doc.internal.getNumberOfPages();
+    const gen = new Date().toLocaleDateString('pt-BR');
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...SUB);
+      doc.text('MGC · gerado em ' + gen, M, H-8);
+      doc.text(i + ' / ' + pages, W-M, H-8, {align:'right'});
+    }
+
+    const fname = scope==='mes'
+      ? `MGC_Despesas_${cur.getFullYear()}_${String(cur.getMonth()+1).padStart(2,'0')}.pdf`
+      : `MGC_Despesas_${cur.getFullYear()}.pdf`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if(isMobile){
+      // no celular abre direto no visualizador de PDF; se o navegador bloquear, baixa
+      const w = window.open(URL.createObjectURL(doc.output('blob')), '_blank');
+      if(!w) doc.save(fname);
+    } else {
+      doc.save(fname);
+    }
+    note.textContent = 'PDF gerado!';
+  } catch(err) {
+    console.error('Erro ao gerar PDF:', err);
+    note.textContent = 'Erro ao gerar PDF: ' + (err && err.message ? err.message : err);
   }
 }
 </script>
