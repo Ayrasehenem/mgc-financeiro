@@ -431,7 +431,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyamNeiof2eeksEVlZZM0uwHkNaPBU-1pUp7hqjXoggThHo03Z0HvFgPES7DbUaPCjZxg/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwBbEeIa1R28P0k01ufbhdh_rmCR9Skhih6ydcpBWGFgNCxUfHefEn5UKCdKWhdHvZPKA/exec';
 
 const SENHA_CORRETA = 'Marmores'; 
 const sessionLogged = localStorage.getItem('mgc_logged');
@@ -964,8 +964,8 @@ function renderPendingList(){
   const l = document.getElementById('pendList');
   l.innerHTML = '';
   
-  const todayStr = todayStr();
-  const todayTime = new Date(todayStr).getTime();
+  const hojeStr = todayStr();
+  const todayTime = new Date(hojeStr).getTime();
   let alertCount = 0;
 
   if(!pendingBills.length){ 
