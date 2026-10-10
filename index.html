@@ -43,7 +43,8 @@ header{padding:8px 0 12px; display:flex; justify-content:center; align-items:cen
 .privacy-btn{background:var(--card);border:1px solid var(--line);color:var(--sub);font-size:14px;cursor:pointer;padding:6px 8px;border-radius:8px;}
 
 .nav-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--line);padding:4px;border-radius:10px; position:relative;}
-.nav-tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--sub);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .2s; position:relative;}
+.nav-tab{flex:1;padding:6px 2px;text-align:center;font-size:10px;line-height:1.15;font-weight:700;color:var(--sub);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .2s; position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;}
+.nav-tab .ni{font-size:17px;line-height:1;}
 .nav-tab.active{background:var(--card);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,0.05);}
 
 /* Badge de alerta nas abas */
@@ -113,6 +114,13 @@ header{padding:8px 0 12px; display:flex; justify-content:center; align-items:cen
 .brow .bar i{display:block;height:100%;border-radius:2px;}
 .brow .val{color:var(--sub);min-width:58px;text-align:right;}
 
+/* NOTAS (bloco de notas do mês) */
+.note-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;}
+.note-title{font-size:16px;font-weight:700;color:var(--ink);word-break:break-word;}
+.note-prev{font-size:14px;color:var(--sub);margin-top:3px;line-height:1.35;white-space:pre-line;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.note-date{font-size:11px;color:var(--sub);margin-top:6px;}
+.empty-note{font-size:13px;color:var(--sub);text-align:center;padding:24px 0;}
+#noteText{width:100%;box-sizing:border-box;min-height:240px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:16px;line-height:1.4;color:var(--ink);font-family:inherit;resize:vertical;}
 h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px;font-weight:700;}
 
 .stub{
@@ -243,10 +251,11 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   <div id="loadingStatus">Carregando dados da nuvem...</div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" data-target="tabDespesas">🧾 Despesas</button>
-    <button class="nav-tab" data-target="tabObra">🏗 Obra</button>
-    <button class="nav-tab" data-target="tabPendentes">⏳ Pendentes <span id="pendBadge" class="tab-badge">0</span></button>
-    <button class="nav-tab" data-target="tabPorquinho">🐷 Porquinho</button>
+    <button class="nav-tab active" data-target="tabDespesas"><span class="ni">🧾</span>Despesas</button>
+    <button class="nav-tab" data-target="tabObra"><span class="ni">🏗</span>Obra</button>
+    <button class="nav-tab" data-target="tabPendentes"><span class="ni">⏳</span>Pendentes <span id="pendBadge" class="tab-badge">0</span></button>
+    <button class="nav-tab" data-target="tabNotas"><span class="ni">📝</span>Notas</button>
+    <button class="nav-tab" data-target="tabPorquinho"><span class="ni">🐷</span>Porquinho</button>
   </div>
 
   <!-- ABA DESPESAS -->
@@ -297,6 +306,19 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     </div>
     <h2 class="sec">Lembretes & Contas a Vencer</h2>
     <div id="pendList"></div>
+  </div>
+
+  <!-- ABA NOTAS (bloco de notas do mês) -->
+  <div id="tabNotas" class="view-section">
+    <div class="monthnav">
+      <button id="notePrevM">‹</button>
+      <span id="noteMonthLbl" class="mono"></span>
+      <button id="noteNextM">›</button>
+    </div>
+    <div style="display:flex; margin-bottom:12px;">
+      <button class="btn primary" id="noteNewBtn" style="flex:1;">+ Nova nota</button>
+    </div>
+    <div id="noteList"></div>
   </div>
 
   <!-- ABA PORQUINHO -->
@@ -385,6 +407,18 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     <div class="btnrow">
       <button class="btn" id="catManagerCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
       <button class="btn primary" id="catManagerSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="noteSheet">
+  <div class="sheet">
+    <h3 id="noteModalTitle">Nova nota</h3>
+    <textarea id="noteText" placeholder="Escreva aqui..."></textarea>
+    <div class="btnrow" style="margin-top:12px;">
+      <button class="btn" id="noteDelBtn" style="background:var(--line);color:#AE3A2C;display:none;">Excluir</button>
+      <button class="btn" id="noteCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
+      <button class="btn primary" id="noteSave">Salvar</button>
     </div>
   </div>
 </div>
@@ -524,6 +558,8 @@ let expenses = [];
 let obraMovs = [];
 let pendingBills = [];
 let piggyMovements = [];
+let notes = [];
+let editingNoteId = null;
 
 let cur = new Date(); cur.setDate(1);
 let pendingImageMime = 'image/jpeg';
@@ -574,14 +610,14 @@ function compressImage(dataUrl, maxSide=1600, quality=0.82){
 function saveCache(){
   try{
     const strip = a => a.map(i => (i.image && !String(i.image).startsWith('http')) ? {...i, image:''} : i);
-    localStorage.setItem('mgc_cache', JSON.stringify({expenses:strip(expenses), obraMovs:strip(obraMovs), pendingBills:strip(pendingBills), piggyMovements:strip(piggyMovements)}));
+    localStorage.setItem('mgc_cache', JSON.stringify({expenses:strip(expenses), obraMovs:strip(obraMovs), pendingBills:strip(pendingBills), piggyMovements:strip(piggyMovements), notes:notes}));
   }catch(e){}
 }
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem('mgc_cache')||'null');
     if(!c) return false;
-    expenses=c.expenses||[]; obraMovs=c.obraMovs||[]; pendingBills=c.pendingBills||[]; piggyMovements=c.piggyMovements||[];
+    expenses=c.expenses||[]; obraMovs=c.obraMovs||[]; pendingBills=c.pendingBills||[]; piggyMovements=c.piggyMovements||[]; notes=c.notes||[];
     return true;
   }catch(e){ return false; }
 }
@@ -765,7 +801,7 @@ async function loadFromCloud(){
     const res = await fetch(WEBHOOK_URL);
     const data = await res.json();
     
-    const nExp = [], nObra = [], nPend = [], nPig = [];
+    const nExp = [], nObra = [], nPend = [], nPig = [], nNotes = [];
     let cfgItem = null;
     if(Array.isArray(data)){
       data.forEach(item => {
@@ -773,10 +809,11 @@ async function loadFromCloud(){
         else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') nObra.push(item);
         else if(item.tipo === 'pendente') nPend.push(item);
         else if(item.tipo === 'porquinho') nPig.push(item);
+        else if(item.tipo === 'nota') nNotes.push(item);
         else if(item.tipo === 'config') cfgItem = item;
       });
     }
-    expenses = nExp; obraMovs = nObra; pendingBills = nPend; piggyMovements = nPig;
+    expenses = nExp; obraMovs = nObra; pendingBills = nPend; piggyMovements = nPig; notes = nNotes.map(n=>({...n, pago: n.pago===true || n.pago==='true'}));
     applyCloudConfig(cfgItem);
     saveCache();
     status.textContent = '';
@@ -825,6 +862,7 @@ function render(){
 
   renderObraList();
   renderPendingList();
+  renderNotes();
 
   const byCat = {};
   monthExp.forEach(e=>{ byCat[e.categoria]=(byCat[e.categoria]||0)+(Number(e.valor)||0); });
@@ -893,14 +931,14 @@ function render(){
 
 function openImageViewer(imageStr){
   if(!imageStr) return;
-  if(isPdfStr(imageStr)){
-    const id = driveId(imageStr);
-    if(id) window.open('https://drive.google.com/file/d/' + id + '/view', '_blank');
-    else alert('O PDF ainda está sendo enviado. Tente de novo em instantes.');
-    return;
-  }
-  const imgSrc = imgUrl(imageStr, 1600);
-  document.getElementById('imageViewerImg').src = imgSrc;
+  imageStr = String(imageStr);
+  if(/^Erro/i.test(imageStr)){ alert('Este comprovante não foi salvo no Drive. Anexe de novo.'); return; }
+  // arquivo no Drive (imagem ou PDF): abre direto no Drive, funciona mesmo se a miniatura falhar
+  const id = imageStr.startsWith('http') ? driveId(imageStr) : null;
+  if(id){ window.open('https://drive.google.com/file/d/' + id + '/view', '_blank'); return; }
+  if(isPdfStr(imageStr)){ alert('O PDF ainda está sendo enviado. Tente de novo em instantes.'); return; }
+  // imagem recém-anexada (ainda local)
+  document.getElementById('imageViewerImg').src = imgUrl(imageStr, 1600);
   document.getElementById('imageViewerBg').classList.add('open');
 }
 
@@ -928,12 +966,16 @@ function openDetailModal(item){
   if(item.image) {
     const imgSrc = imgUrl(item.image, 800);
     imgContainer.innerHTML = `
-      <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">${isPdfStr(item.image) ? 'PDF anexado (clique para abrir)' : 'Comprovante Anexado (Clique para ampliar)'}:</div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">${isPdfStr(item.image) ? 'PDF anexado' : 'Comprovante anexado'} (toque para abrir no Drive):</div>
       <img src="${imgSrc}" id="detModalImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--line);object-fit:contain;cursor:pointer;" alt="Comprovante">
     `;
     const detModalImg = document.getElementById('detModalImg');
     if(detModalImg) {
       detModalImg.onclick = () => openImageViewer(item.image);
+      detModalImg.onerror = () => {
+        imgContainer.innerHTML = '<button class="btn primary" id="detOpenDrive" style="width:100%;flex:none;">📎 Abrir comprovante no Drive</button>';
+        document.getElementById('detOpenDrive').onclick = () => openImageViewer(item.image);
+      };
     }
   } else {
     imgContainer.innerHTML = '<div style="font-size:11px;color:var(--sub);">Nenhum comprovante anexado.</div>';
@@ -1132,6 +1174,7 @@ async function deleteItem(id){
     obraMovs = obraMovs.filter(m=>m.id!==id);
     pendingBills = pendingBills.filter(p=>p.id!==id);
     piggyMovements = piggyMovements.filter(pi=>pi.id!==id);
+    notes = notes.filter(n=>n.id!==id);
     render();
     await sendToCloud({ action: 'delete', id: id });
   }
@@ -1160,6 +1203,74 @@ async function payPending(id){
   render();
   await sendToCloud(doc);
 }
+
+function renderNotes(){
+  const mk = monthKey(cur);
+  const mn = cur.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('noteMonthLbl').textContent = mn;
+  const list = document.getElementById('noteList');
+  const monthNotes = notes.filter(n => n.data && n.data.slice(0,7) === mk)
+                          .sort((a,b) => String(b.id).localeCompare(String(a.id)));
+  if(!monthNotes.length){
+    list.innerHTML = '<div class="empty-note">Nenhuma nota neste mês.<br>Toque em “+ Nova nota” para escrever.</div>';
+    return;
+  }
+  list.innerHTML = monthNotes.map(n => {
+    const lines = String(n.descricao || '').split('\n');
+    const title = lines[0] || '(sem título)';
+    const rest = lines.slice(1).join('\n').trim();
+    return `<div class="note-card" data-id="${escapeHtml(n.id)}">
+      <div class="note-title">${escapeHtml(title)}</div>
+      ${rest ? `<div class="note-prev">${escapeHtml(rest)}</div>` : ''}
+      <div class="note-date">${formatDate(n.data)}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.note-card').forEach(c => c.onclick = () => openNoteModal(c.dataset.id));
+}
+
+const noteSheet = document.getElementById('noteSheet');
+function openNoteModal(id){
+  editingNoteId = id || null;
+  const n = id ? notes.find(x => x.id === id) : null;
+  document.getElementById('noteModalTitle').textContent = n ? 'Editar nota' : 'Nova nota';
+  document.getElementById('noteText').value = n ? n.descricao : '';
+  document.getElementById('noteDelBtn').style.display = n ? 'block' : 'none';
+  noteSheet.classList.add('open');
+  setTimeout(() => document.getElementById('noteText').focus(), 150);
+}
+document.getElementById('noteNewBtn').onclick = () => openNoteModal(null);
+document.getElementById('noteCancel').onclick = () => noteSheet.classList.remove('open');
+noteSheet.addEventListener('click', (e) => { if(e.target === noteSheet) noteSheet.classList.remove('open'); });
+
+document.getElementById('noteSave').onclick = async () => {
+  const txt = document.getElementById('noteText').value.trim();
+  noteSheet.classList.remove('open');
+  if(!txt) return;
+  let n;
+  if(editingNoteId){
+    n = notes.find(x => x.id === editingNoteId);
+    if(!n) return;
+    n.descricao = txt;
+  } else {
+    const mk = monthKey(cur), t = todayStr();
+    n = { id:'nota_'+Date.now(), tipo:'nota', data: (t.slice(0,7) === mk ? t : mk + '-01'), valor:0, descricao:txt, categoria:'', tag:'', extra:false, image:'', imageName:'', pago:false };
+    notes.push(n);
+  }
+  renderNotes(); saveCache();
+  await sendToCloud(n);
+};
+
+document.getElementById('noteDelBtn').onclick = async () => {
+  if(!editingNoteId || !confirm('Excluir esta nota?')) return;
+  const id = editingNoteId;
+  notes = notes.filter(x => x.id !== id);
+  noteSheet.classList.remove('open');
+  renderNotes(); saveCache();
+  await sendToCloud({ action:'delete', id:id });
+};
+
+document.getElementById('notePrevM').onclick = () => { cur.setMonth(cur.getMonth()-1); render(); };
+document.getElementById('noteNextM').onclick = () => { cur.setMonth(cur.getMonth()+1); render(); };
 
 function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
@@ -1198,6 +1309,8 @@ document.getElementById('fabBtn').onclick = () => {
     document.getElementById('pendDesc').value = '';
     document.getElementById('pendFormError').textContent = '';
     document.getElementById('pendSheetBg').classList.add('open');
+  } else if(activeTab === 'tabNotas') {
+    openNoteModal(null);
   } else if(activeTab === 'tabPorquinho') {
     openPiggyModal('add');
   }
