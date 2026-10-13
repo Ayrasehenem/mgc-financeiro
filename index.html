@@ -356,14 +356,12 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
     <div class="field"><label>Descrição / Nome do Destino</label><input type="text" id="fDesc" placeholder="Ex: Pix para João da Silva"></div>
     <div class="row2">
       <div class="field">
-        <label>Categoria <button type="button" class="editlink" id="editCatBtn">editar</button></label>
+        <label>Categoria</label>
         <select id="fCat"></select>
-        <div class="addrow" id="catAddRow" style="display:none;"><input type="text" id="catAddInput" placeholder="Nova"><button type="button" id="catAddBtn">OK</button></div>
       </div>
       <div class="field">
-        <label>Tag <button type="button" class="editlink" id="editTagBtn">editar</button></label>
+        <label>Tag</label>
         <select id="fTag"></select>
-        <div class="addrow" id="tagAddRow" style="display:none;"><input type="text" id="tagAddInput" placeholder="Nova"><button type="button" id="tagAddBtn">OK</button></div>
       </div>
     </div>
     <div class="field" style="margin-top:8px;">
@@ -398,18 +396,6 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
   </div>
 </div>
 
-<!-- Modal Gerenciar Categorias/Tags -->
-<div class="sheet-bg" id="catManagerModal">
-  <div class="sheet">
-    <h3 id="catManagerTitle">Editar categorias</h3>
-    <div id="catManagerList" style="max-height: 50vh; overflow-y: auto; margin-bottom: 12px;"></div>
-    <button class="photobtn" id="addNewCatFieldBtn" style="margin-bottom: 12px;">+ Adicionar nova</button>
-    <div class="btnrow">
-      <button class="btn" id="catManagerCancel" style="background:var(--line);color:var(--ink);">Cancelar</button>
-      <button class="btn primary" id="catManagerSave">Salvar</button>
-    </div>
-  </div>
-</div>
 
 <div class="sheet-bg" id="noteSheet">
   <div class="sheet">
@@ -655,8 +641,6 @@ function renderOptions(selEl, list, addLabel){
   const keep = selEl.value;
   selEl.innerHTML='';
   list.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;selEl.appendChild(o);});
-  const addOpt=document.createElement('option'); addOpt.value='__add__'; addOpt.textContent=addLabel;
-  selEl.appendChild(addOpt);
   if(list.includes(keep)) selEl.value = keep;
 }
 
@@ -674,131 +658,55 @@ function refreshAllSelects(){
 }
 refreshAllSelects();
 
-function setupAddable(selEl, rowId, inputId, btnId, list, addLabel, storageKey){
-  const row = document.getElementById(rowId);
-  const input = document.getElementById(inputId);
-  const btn = document.getElementById(btnId);
-  if(!row || !input || !btn) return;
-  selEl.addEventListener('change', ()=>{
-    if(selEl.value==='__add__'){ row.style.display='flex'; input.value=''; input.focus(); }
-    else { row.style.display='none'; }
-  });
-  const confirmAdd = ()=>{
-    const val = input.value.trim();
-    if(!val) return;
-    const live = storageKey === 'mgc_cats' ? categorias : tagsList;
-    if(!live.includes(val)) { 
-      live.push(val); 
-      localStorage.setItem(storageKey, JSON.stringify(live));
-      saveConfig();
-    }
-    refreshAllSelects();
-    selEl.value = val;
-    row.style.display='none';
-  };
-  btn.onclick = confirmAdd;
-}
-setupAddable(fCat, 'catAddRow', 'catAddInput', 'catAddBtn', categorias, '➕ Nova', 'mgc_cats');
-setupAddable(fTag, 'tagAddRow', 'tagAddInput', 'tagAddBtn', tagsList, '➕ Nova', 'mgc_tags');
-
 function renderFilterOptions(){
   const keepC = filterCatEl.value || 'todas';
   const keepT = filterTagEl.value || 'todas';
-  filterCatEl.innerHTML = '<option value="todas">Todas categorias</option>' + categorias.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  filterTagEl.innerHTML = '<option value="todas">Todas tags</option>' + tagsList.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-  filterCatEl.value = categorias.includes(keepC) ? keepC : 'todas';
-  filterTagEl.value = tagsList.includes(keepT) ? keepT : 'todas';
+  // lista da planilha + nomes antigos ainda usados em lançamentos (para nada ficar escondido)
+  const catsAll = categorias.concat([...new Set(expenses.map(e=>e.categoria).filter(Boolean))].filter(c=>!categorias.includes(c)));
+  const tagsAll = tagsList.concat([...new Set(expenses.map(e=>e.tag).filter(Boolean))].filter(t=>!tagsList.includes(t)));
+  filterCatEl.innerHTML = '<option value="todas">Todas categorias</option>' + catsAll.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  filterTagEl.innerHTML = '<option value="todas">Todas tags</option>' + tagsAll.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  filterCatEl.value = catsAll.includes(keepC) ? keepC : 'todas';
+  filterTagEl.value = tagsAll.includes(keepT) ? keepT : 'todas';
   filterCategoria = filterCatEl.value;
   filterTag = filterTagEl.value;
 }
 filterCatEl.onchange = ()=>{ filterCategoria = filterCatEl.value; render(); };
 filterTagEl.onchange = ()=>{ filterTag = filterTagEl.value; render(); };
 
-let editingManagerType = 'cat';
-function openCategoryManager(type){
-  editingManagerType = type;
-  document.getElementById('catManagerTitle').textContent = type === 'cat' ? 'Editar categorias' : 'Editar tags';
-  renderCategoryManagerList();
-  document.getElementById('catManagerModal').classList.add('open');
-}
-function renderCategoryManagerList(){
-  const list = editingManagerType === 'cat' ? categorias : tagsList;
-  const container = document.getElementById('catManagerList');
-  container.innerHTML = '';
-  list.forEach((item, index) => {
-    const row = document.createElement('div');
-    row.className = 'mgc-manager-row';
-    row.innerHTML = `
-      <input type="text" class="mgc-manager-input" value="${escapeHtml(item)}" data-index="${index}">
-      <button class="mgc-del-btn" title="Excluir">✕</button>
-    `;
-    row.querySelector('.mgc-del-btn').onclick = () => {
-      list.splice(index, 1);
-      renderCategoryManagerList();
-    };
-    container.appendChild(row);
-  });
-}
-document.getElementById('editCatBtn').onclick = () => openCategoryManager('cat');
-document.getElementById('editTagBtn').onclick = () => openCategoryManager('tag');
-
-document.getElementById('addNewCatFieldBtn').onclick = () => {
-  const list = editingManagerType === 'cat' ? categorias : tagsList;
-  list.push('');
-  renderCategoryManagerList();
-  const inputs = document.querySelectorAll('.mgc-manager-input');
-  if(inputs.length) inputs[inputs.length - 1].focus();
-};
-
-document.getElementById('catManagerCancel').onclick = () => {
-  document.getElementById('catManagerModal').classList.remove('open');
-};
-
-document.getElementById('catManagerSave').onclick = () => {
-  const inputs = document.querySelectorAll('.mgc-manager-input');
-  const newList = [];
-  inputs.forEach(inp => {
-    const val = inp.value.trim();
-    if(val && !newList.includes(val)) newList.push(val);
-  });
-  if(editingManagerType === 'cat') {
-    categorias.splice(0, categorias.length, ...(newList.length ? newList : ["Outros"]));
-    localStorage.setItem('mgc_cats', JSON.stringify(categorias));
-  } else {
-    tagsList.splice(0, tagsList.length, ...(newList.length ? newList : ["Pix"]));
-    localStorage.setItem('mgc_tags', JSON.stringify(tagsList));
-  }
-  saveConfig();
-  refreshAllSelects();
-  document.getElementById('catManagerModal').classList.remove('open');
-};
-
-function saveConfig(){
-  return sendToCloud({ id:'config', tipo:'config', data:'', valor:0, descricao: JSON.stringify({cats:categorias, tags:tagsList}), categoria:'', tag:'', extra:false, image:'', imageName:'' });
-}
-
+// As categorias e tags vêm da aba "Categorias" da planilha (edite lá).
 function applyCloudConfig(cfgItem){
   let cfg = null;
   try { cfg = cfgItem ? JSON.parse(cfgItem.descricao) : null; } catch(e){}
-  const cats = cfg && Array.isArray(cfg.cats) ? cfg.cats.slice() : categorias.slice();
-  const tags = cfg && Array.isArray(cfg.tags) ? cfg.tags.slice() : tagsList.slice();
-  expenses.concat(pendingBills).forEach(e=>{ if(e.categoria && !cats.includes(e.categoria)) cats.push(e.categoria); });
-  expenses.forEach(e=>{ if(e.tag && !tags.includes(e.tag)) tags.push(e.tag); });
-  categorias.splice(0, categorias.length, ...cats);
-  tagsList.splice(0, tagsList.length, ...tags);
+  if(cfg && Array.isArray(cfg.cats) && cfg.cats.length) categorias.splice(0, categorias.length, ...cfg.cats);
+  if(cfg && Array.isArray(cfg.tags) && cfg.tags.length) tagsList.splice(0, tagsList.length, ...cfg.tags);
   localStorage.setItem('mgc_cats', JSON.stringify(categorias));
   localStorage.setItem('mgc_tags', JSON.stringify(tagsList));
   refreshAllSelects();
-  if(!cfgItem) saveConfig();
 }
 
+// garante que o valor exista no select (ex.: lançamento antigo com categoria que saiu da planilha)
+function setSelectValue(sel, value, fallback){
+  const v = value || fallback;
+  if(v && ![...sel.options].some(o=>o.value===v)){
+    const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
+  }
+  sel.value = v;
+}
+
+let lastSync = 0;
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && localStorage.getItem('mgc_logged') === 'true' && Date.now() - lastSync > 20000) loadFromCloud();
+});
+
 async function loadFromCloud(){
+  lastSync = Date.now();
   const status = document.getElementById('loadingStatus');
   // mostra na hora o que ficou guardado da última vez
   if(loadCache()){ render(); status.textContent = 'Atualizando...'; }
   else status.textContent = 'Sincronizando com a nuvem...';
   try {
-    const res = await fetch(WEBHOOK_URL);
+    const res = await fetch(WEBHOOK_URL, { cache: 'no-store' });
     const data = await res.json();
     
     const nExp = [], nObra = [], nPend = [], nPig = [], nNotes = [];
@@ -995,8 +903,8 @@ document.getElementById('detEdit').onclick = () => {
   document.getElementById('fData').value = (currentDetailItem.data || '').split('T')[0];
   document.getElementById('fValor').value = currentDetailItem.valor || '';
   document.getElementById('fDesc').value = currentDetailItem.descricao || '';
-  fCat.value = currentDetailItem.categoria || categorias[0];
-  fTag.value = currentDetailItem.tag || tagsList[0];
+  setSelectValue(fCat, currentDetailItem.categoria, categorias[0]);
+  setSelectValue(fTag, currentDetailItem.tag, tagsList[0]);
   document.getElementById('fDescontarObra').checked = currentDetailItem.extra === true || currentDetailItem.extra === 'true';
   
   pendingImageBase64 = null;
@@ -1151,7 +1059,7 @@ function openPendingDetail(id){
   document.getElementById('pendData').value = (p.data || '').split('T')[0];
   document.getElementById('pendValor').value = p.valor || '';
   document.getElementById('pendDesc').value = p.descricao || '';
-  pendCat.value = p.categoria || categorias[0];
+  setSelectValue(pendCat, p.categoria, categorias[0]);
   
   pendingBillImageBase64 = null;
   pendingBillImageName = p.imageName || '';
@@ -1288,8 +1196,6 @@ document.getElementById('fabBtn').onclick = () => {
     document.getElementById('fValor').value='';
     document.getElementById('fDesc').value='';
     document.getElementById('formError').textContent='';
-    document.getElementById('catAddRow').style.display='none';
-    document.getElementById('tagAddRow').style.display='none';
     document.getElementById('fDescontarObra').checked=false;
     document.getElementById('fData').value = todayStr();
     document.getElementById('sheetBg').classList.add('open');
@@ -1319,6 +1225,48 @@ document.getElementById('fabBtn').onclick = () => {
 const sheetBg = document.getElementById('sheetBg');
 document.getElementById('cancelAdd').onclick = ()=> sheetBg.classList.remove('open');
 document.getElementById('photoBtn').onclick = ()=> document.getElementById('fileInput').click();
+
+/* Leitura de data dos comprovantes (C6, Nubank, etc.) */
+const MES_ABREV = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const MES_CHEIO = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+function monthFromToken(tok){
+  // normaliza acentos e confusões comuns do OCR (0↔O, 5↔S, 1↔I)
+  let t = tok.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/0/g,'O').replace(/5/g,'S').replace(/[1|]/g,'I');
+  const i = MES_ABREV.indexOf(t.slice(0,3));
+  if(i < 0) return 0;
+  if(t.length === 3 || MES_CHEIO[i].startsWith(t.slice(0,4))) return i + 1;
+  return 0;
+}
+function parseReceiptDate(text){
+  const now = new Date(), minY = now.getFullYear() - 3, maxY = now.getFullYear() + 1;
+  const pad = n => String(n).padStart(2,'0');
+  const valid = (d,m,y) => d>=1 && d<=31 && m>=1 && m<=12 && y>=minY && y<=maxY;
+  const lines = String(text || '').split('\n');
+  const cands = [];
+  lines.forEach((line, li) => {
+    if(/vencimento/i.test(line)) return; // data de vencimento não é a data do pagamento
+    const ctx = (lines[li-1] || '') + ' ' + line;
+    // linhas ligadas à data da transação têm prioridade
+    const prio = /data|hor[aá]rio|transa[cç][aã]o|realizad/i.test(ctx) ? 0 : 1;
+    let m;
+    const reT = /\b(\d{1,2})\s*(?:de\s+)?([A-Za-zÀ-ú0-9]{3,10})\.?\s*(?:de\s+)?(\d{4})\b/gi;
+    while((m = reT.exec(line))){
+      const mo = monthFromToken(m[2]), d = +m[1], y = +m[3];
+      if(mo && valid(d,mo,y)) cands.push({prio, kind:0, li, v:`${y}-${pad(mo)}-${pad(d)}`});
+    }
+    const reN = /\b(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4}|\d{2})(?!\d)/g;
+    while((m = reN.exec(line))){
+      const d = +m[1], mo = +m[2]; let y = +m[3]; if(m[3].length === 2) y += 2000;
+      if(valid(d,mo,y)) cands.push({prio, kind:1, li, v:`${y}-${pad(mo)}-${pad(d)}`});
+    }
+    const reI = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+    while((m = reI.exec(line))){
+      if(valid(+m[3], +m[2], +m[1])) cands.push({prio, kind:1, li, v:`${m[1]}-${m[2]}-${m[3]}`});
+    }
+  });
+  cands.sort((a,b) => a.prio - b.prio || a.kind - b.kind || a.li - b.li);
+  return cands.length ? cands[0].v : '';
+}
 
 /* INTEGRADO: Bloco de OCR melhorado */
 document.getElementById('fileInput').onchange = async (ev) => {
@@ -1368,13 +1316,9 @@ document.getElementById('fileInput').onchange = async (ev) => {
         }
       }
 
-      // 2. EXTRAÇÃO DE DATA
-      const dateMatch = text.match(/\b(\d{2})[\/\.-](\d{2})[\/\.-](\d{2,4})\b/);
-      if (dateMatch) {
-        let [_, day, month, year] = dateMatch;
-        if (year.length === 2) year = '20' + year;
-        document.getElementById('fData').value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
+      // 2. EXTRAÇÃO DE DATA (aceita 30/09/2026, 27 SET 2026, 30 de setembro de 2026...)
+      const dataLida = parseReceiptDate(text);
+      if (dataLida) document.getElementById('fData').value = dataLida;
 
       // 3. EXTRAÇÃO DO FAVORECIDO / DESTINATÁRIO
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
