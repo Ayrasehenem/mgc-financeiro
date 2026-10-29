@@ -829,25 +829,45 @@ async function loadFromCloud(){
     const res = await fetch(WEBHOOK_URL, { cache: 'no-store' });
     const data = await res.json();
     
-    const nExp = [], nObra = [], nPend = [], nPig = [], nNotes = [], nFunc = [];
+    const nExp = [], nObra = [], nPend = [], nPig = [], nNotes = [];
+    const funcMap = new Map();
     let cfgItem = null;
+    
     if(Array.isArray(data)){
       data.forEach(item => {
         if(item.tipo === 'despesa') nExp.push(item);
         else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') nObra.push(item);
         else if(item.tipo === 'pendente') nPend.push(item);
         else if(item.tipo === 'funcionario' || (item.id && String(item.id).startsWith('func_'))) {
-          // Normaliza objeto do funcionário vindo da planilha
-          const normalizedFunc = {
-            id: item.id || item.ID,
-            tipo: 'funcionario',
-            nome: item.nome || item.Nome || item.descricao || item.Descricao || item.NomeCompleto || '',
-            obra: item.obra || item.Obra || '',
-            funcao: item.funcao || item.Funcao || item['função'] || item['Função'] || '',
-            pix: item.pix || item.Pix || item.chavePix || item['Chave PIX'] || item['chave PIX'] || ''
-          };
-          if(normalizedFunc.nome) {
-            nFunc.push(normalizedFunc);
+          // Extrai o ID e o Nome do funcionário com tolerância a múltiplos formatos
+          const fId = String(item.id || item.ID || '').trim();
+          const fNome = String(item.nome || item.Nome || item.descricao || item.Descricao || '').trim();
+          const fObra = String(item.obra || item.Obra || '').trim();
+          const fFuncao = String(item.funcao || item.Funcao || item['função'] || item['Função'] || '').trim();
+          const fPix = String(item.pix || item.Pix || item.chavePix || item['Chave PIX'] || '').trim();
+
+          // Ignora registros sem ID ou que sejam o próprio cabeçalho da planilha
+          if(fId && fId !== 'ID' && fNome && fNome !== 'Nome Completo' && fNome !== 'Nome') {
+            if(funcMap.has(fId)) {
+              const existing = funcMap.get(fId);
+              funcMap.set(fId, {
+                id: fId,
+                tipo: 'funcionario',
+                nome: fNome || existing.nome,
+                obra: fObra || existing.obra,
+                funcao: fFuncao || existing.funcao,
+                pix: fPix || existing.pix
+              });
+            } else {
+              funcMap.set(fId, {
+                id: fId,
+                tipo: 'funcionario',
+                nome: fNome,
+                obra: fObra,
+                funcao: fFuncao,
+                pix: fPix
+              });
+            }
           }
         }
         else if(item.tipo === 'porquinho') nPig.push(item);
@@ -855,6 +875,8 @@ async function loadFromCloud(){
         else if(item.tipo === 'config') cfgItem = item;
       });
     }
+
+    const nFunc = Array.from(funcMap.values());
     expenses = nExp; obraMovs = nObra; pendingBills = nPend; funcionarios = nFunc; piggyMovements = nPig; notes = nNotes.map(n=>({...n, pago: n.pago===true || n.pago==='true'}));
     applyCloudConfig(cfgItem);
     saveCache();
@@ -1413,25 +1435,15 @@ document.getElementById('funcSave').onclick = async () => {
     return;
   }
 
-  // Prepara o payload incluindo todas as variantes de campos para garantir compatibilidade completa no Apps Script
+  // Prepara o objeto exatamente com as chaves que o Apps Script lê na função doPost
   const doc = {
-    id: editingFuncId ? editingFuncId : 'func_'+Date.now(),
+    id: editingFuncId ? editingFuncId : 'func_' + Date.now(),
     tipo: 'funcionario',
     nome: nome,
-    Nome: nome,
-    descricao: nome, // Mapeamento padrão de texto no Apps Script
-    Descricao: nome,
+    descricao: nome,
     obra: obra,
-    Obra: obra,
     funcao: funcao,
-    Funcao: funcao,
-    'Função': funcao,
-    pix: pix,
-    Pix: pix,
-    'Chave PIX': pix,
-    categoria: 'Funcionários',
-    valor: 0,
-    data: todayStr()
+    pix: pix
   };
 
   if(editingFuncId) {
