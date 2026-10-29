@@ -836,7 +836,18 @@ async function loadFromCloud(){
         if(item.tipo === 'despesa') nExp.push(item);
         else if(item.tipo === 'obraRec' || item.tipo === 'obraGast') nObra.push(item);
         else if(item.tipo === 'pendente') nPend.push(item);
-        else if(item.tipo === 'funcionario') nFunc.push(item);
+        else if(item.tipo === 'funcionario' || (item.id && String(item.id).startsWith('func_'))) {
+          // Normaliza objeto do funcionário vindo da planilha
+          const normalizedFunc = {
+            id: item.id || item.ID,
+            tipo: 'funcionario',
+            nome: item.nome || item.Nome || item.descricao || item.Descricao || '',
+            obra: item.obra || item.Obra || '',
+            funcao: item.funcao || item.Funcao || item['função'] || item['Função'] || '',
+            pix: item.pix || item.Pix || item.chavePix || item['Chave PIX'] || item['chave PIX'] || ''
+          };
+          nFunc.push(normalizedFunc);
+        }
         else if(item.tipo === 'porquinho') nPig.push(item);
         else if(item.tipo === 'nota') nNotes.push(item);
         else if(item.tipo === 'config') cfgItem = item;
