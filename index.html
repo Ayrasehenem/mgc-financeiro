@@ -841,12 +841,14 @@ async function loadFromCloud(){
           const normalizedFunc = {
             id: item.id || item.ID,
             tipo: 'funcionario',
-            nome: item.nome || item.Nome || item.descricao || item.Descricao || '',
+            nome: item.nome || item.Nome || item.descricao || item.Descricao || item.NomeCompleto || '',
             obra: item.obra || item.Obra || '',
             funcao: item.funcao || item.Funcao || item['função'] || item['Função'] || '',
             pix: item.pix || item.Pix || item.chavePix || item['Chave PIX'] || item['chave PIX'] || ''
           };
-          nFunc.push(normalizedFunc);
+          if(normalizedFunc.nome) {
+            nFunc.push(normalizedFunc);
+          }
         }
         else if(item.tipo === 'porquinho') nPig.push(item);
         else if(item.tipo === 'nota') nNotes.push(item);
@@ -1411,15 +1413,22 @@ document.getElementById('funcSave').onclick = async () => {
     return;
   }
 
-  // Prepara o payload no formato esperado pelo Apps Script (descricao preenchida com o nome para gravar na Coluna F da planilha)
+  // Prepara o payload incluindo todas as variantes de campos para garantir compatibilidade completa no Apps Script
   const doc = {
     id: editingFuncId ? editingFuncId : 'func_'+Date.now(),
     tipo: 'funcionario',
     nome: nome,
-    descricao: nome, // Garante envio da Coluna F da planilha
+    Nome: nome,
+    descricao: nome, // Mapeamento padrão de texto no Apps Script
+    Descricao: nome,
     obra: obra,
+    Obra: obra,
     funcao: funcao,
+    Funcao: funcao,
+    'Função': funcao,
     pix: pix,
+    Pix: pix,
+    'Chave PIX': pix,
     categoria: 'Funcionários',
     valor: 0,
     data: todayStr()
