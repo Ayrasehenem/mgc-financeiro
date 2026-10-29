@@ -533,7 +533,7 @@ h2.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--s
 </div>
 
 <script>
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzjuTFWp6DLUY411A779HZnr7cVynt6zNNaztgaWh2g2QOXWFUH5iPD6VSIMlDJY_HYiw/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzD1AsnlUFDWme194-pxskplp45ZiXetp0259skkeaaxFnLR5RzZ1dH5p1mYaMNw8qILw/exec';
 
 const SENHA_CORRETA = 'Marmores'; 
 const sessionLogged = localStorage.getItem('mgc_logged');
@@ -625,35 +625,61 @@ let editingPendingId = null;
 let editingFuncId = null;
 let currentDetailItem = null;
 
-const fmtMoney = n => privacyMode ? 'R$ •••••' : (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-function driveId(s){ const m = String(s).match(/[?&]id=([\w-]+)/) || String(s).match(/\/d\/([\w-]+)/); return m ? m[1] : null; }
-const PDF_ICON = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="10" fill="#FAF6EC"/><text x="40" y="55" font-size="40" text-anchor="middle">📄</text></svg>');
-function isPdfStr(s){ s = String(s||''); return s.startsWith('JVBERi') || /[?&]pdf=1/.test(s); }
-function imgUrl(s, size){
-  if(!s) return '';
-  if(String(s).startsWith('JVBERi')) return PDF_ICON; 
-  if(String(s).startsWith('http')){ const id = driveId(s); return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size||400}` : s; }
-  return `data:image/jpeg;base64,${s}`;
+const PDF_ICON = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23AE3A2C"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/></svg>';
+
+function fmtMoney(val) {
+  if (privacyMode) return 'R$ ••••••';
+  const v = (Number(val) || 0).toFixed(2).split('.');
+  return 'R$ ' + v[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + v[1];
 }
-function buildImageName(data, desc, prefix, ext){
-  const slug = String(desc||'comprovante').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,50) || 'comprovante';
-  return (prefix ? prefix+'_' : '') + (data||todayStr()) + '_' + slug + '.' + (ext || 'jpg');
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function compressImage(dataUrl, maxSide=1600, quality=0.82){
-  return new Promise(resolve=>{
+
+function isPdfStr(str) {
+  return str && (String(str).startsWith('data:application/pdf') || /\.pdf$/i.test(String(str)));
+}
+
+function driveId(url) {
+  if (!url) return null;
+  const m = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+function imgUrl(str, size = 400) {
+  if (!str) return '';
+  if (str.startsWith('http')) return str;
+  if (str.startsWith('data:')) return str;
+  return `https://drive.google.com/thumbnail?id=${str}&sz=w${size}`;
+}
+
+function buildImageName(date, desc, suffix = '', ext = 'jpg') {
+  const cleanDesc = (desc || 'comprovante').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
+  return `${date}_${cleanDesc}${suffix ? '_' + suffix : ''}.${ext}`;
+}
+
+function compressImage(dataUrl, maxDim = 1200, quality = 0.7) {
+  return new Promise((resolve) => {
     const img = new Image();
-    img.onload = ()=>{
-      const r = Math.min(1, maxSide/Math.max(img.width,img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width*r); c.height = Math.round(img.height*r);
-      const ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
-      resolve(c.toDataURL('image/jpeg', quality));
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
-    img.onerror = ()=>resolve(dataUrl);
+    img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
 }
+
 function saveCache(){
   try{
     const strip = a => a.map(i => (i.image && !String(i.image).startsWith('http')) ? {...i, image:''} : i);
@@ -1176,28 +1202,42 @@ function renderFuncList(){
     return;
   }
 
-  funcionarios.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  const getVal = (obj, ...keys) => {
+    if(!obj) return '';
+    for(let k of keys) {
+      if(obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+    }
+    return '';
+  };
+
+  funcionarios.sort((a,b)=> getVal(a, 'nome', 'Nome', 'descricao').localeCompare(getVal(b, 'nome', 'Nome', 'descricao')));
 
   funcionarios.forEach(f => {
+    const fId = getVal(f, 'id', 'ID');
+    const fNome = getVal(f, 'nome', 'Nome', 'descricao') || '(Sem Nome)';
+    const fObra = getVal(f, 'obra', 'Obra');
+    const fFuncao = getVal(f, 'funcao', 'Funcao', 'função');
+    const fPix = getVal(f, 'pix', 'Pix', 'chavePix', 'chavePIX');
+
     // Calcula total pago para este funcionário
-    const totalPago = expenses.filter(e => e.funcionarioId === f.id).reduce((s, e) => s + (Number(e.valor) || 0), 0);
+    const totalPago = expenses.filter(e => (e.funcionarioId && e.funcionarioId === fId) || (e.descricao && e.descricao.toLowerCase().includes(fNome.toLowerCase()))).reduce((s, e) => s + (Number(e.valor) || 0), 0);
 
     const d = document.createElement('div'); d.className = 'stub';
     d.innerHTML = `
       <div class="ph" style="background:#EBF3ED; color:var(--cash); font-weight:bold; font-size:16px;">👷</div>
       <div class="mid" style="cursor:pointer;">
-        <div class="desc">${escapeHtml(f.nome || '(Sem Nome)')}</div>
+        <div class="desc">${escapeHtml(fNome)}</div>
         <div class="meta">
-          ${f.obra ? `<span class="chip obra">🏗️ ${escapeHtml(f.obra)}</span>` : ''}
-          ${f.funcao ? `<span class="chip" style="background:var(--cat2)">${escapeHtml(f.funcao)}</span>` : ''}
+          ${fObra ? `<span class="chip obra">🏗️ ${escapeHtml(fObra)}</span>` : ''}
+          ${fFuncao ? `<span class="chip" style="background:var(--cat2)">${escapeHtml(fFuncao)}</span>` : ''}
         </div>
-        ${f.pix ? `<div style="margin-top:4px;"><button class="pix-copy-btn" data-pix="${escapeHtml(f.pix)}">🔑 PIX: ${escapeHtml(f.pix)} 📋</button></div>` : ''}
+        ${fPix ? `<div style="margin-top:4px;"><button class="pix-copy-btn" data-pix="${escapeHtml(fPix)}">🔑 PIX: ${escapeHtml(fPix)} 📋</button></div>` : ''}
       </div>
       <div class="valcol" style="cursor:pointer;">
         <div class="val mono" style="color:var(--cash); font-size:12px;">${fmtMoney(totalPago)}</div>
         <div class="date mono">Total Pago</div>
       </div>
-      <button class="stub-del" data-delete-id="${f.id}" title="Excluir">✕</button>
+      <button class="stub-del" data-delete-id="${fId}" title="Excluir">✕</button>
     `;
 
     const copyBtn = d.querySelector('.pix-copy-btn');
@@ -1218,12 +1258,12 @@ function renderFuncList(){
     if(delBtn) {
       delBtn.onclick = (ev) => {
         ev.stopPropagation();
-        deleteItem(f.id);
+        deleteItem(fId);
       };
     }
 
-    d.querySelector('.mid').onclick = () => openFuncModal(f.id);
-    d.querySelector('.valcol').onclick = () => openFuncModal(f.id);
+    d.querySelector('.mid').onclick = () => openFuncModal(fId);
+    d.querySelector('.valcol').onclick = () => openFuncModal(fId);
     l.appendChild(d);
   });
 }
@@ -1360,13 +1400,17 @@ document.getElementById('funcSave').onclick = async () => {
     return;
   }
 
+  // Prepara o payload no formato esperado pelo Apps Script (descricao preenchida com o nome para gravar na Coluna F da planilha)
   const doc = {
     id: editingFuncId ? editingFuncId : 'func_'+Date.now(),
     tipo: 'funcionario',
-    nome,
-    obra,
-    funcao,
-    pix,
+    nome: nome,
+    descricao: nome, // Garante envio da Coluna F da planilha
+    obra: obra,
+    funcao: funcao,
+    pix: pix,
+    categoria: 'Funcionários',
+    valor: 0,
     data: todayStr()
   };
 
